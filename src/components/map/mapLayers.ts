@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Point, Polygon } from "geojson";
 import type { Zone } from "@/lib/types";
+import type { MapTheme } from "@/components/map/mapStyles";
 
 const ZONE_BLOBS_SOURCE = "zone-blobs";
 const ZONE_LABELS_SOURCE = "zone-labels";
@@ -24,7 +25,8 @@ export function buildZoneLabelPoints(zones: Zone[]): FeatureCollection<Point> {
 export function addCustomLayers(
   map: MapLibreMap,
   zoneBlobs: FeatureCollection<Polygon> | undefined,
-  zoneLabels: FeatureCollection<Point>
+  zoneLabels: FeatureCollection<Point>,
+  theme: MapTheme = "dark"
 ) {
   if (zoneBlobs && !map.getSource(ZONE_BLOBS_SOURCE)) {
     map.addSource(ZONE_BLOBS_SOURCE, { type: "geojson", data: zoneBlobs });
@@ -69,7 +71,7 @@ export function addCustomLayers(
       },
       paint: {
         "text-color": ["get", "color"],
-        "text-halo-color": "#05070d",
+        "text-halo-color": theme === "light" ? "#f8fafc" : "#05070d",
         "text-halo-width": 1.6,
       },
     });

@@ -12,6 +12,7 @@ import {
   buildSatelliteStyle,
   buildVectorStyle,
 } from "@/components/map/mapStyles";
+import type { MapTheme } from "@/components/map/mapStyles";
 import { addCustomLayers, buildZoneLabelPoints } from "@/components/map/mapLayers";
 import { MapLayerToggle, MapZoomControls } from "@/components/map/MapControls";
 import { MapSearchBox } from "@/components/map/MapSearchBox";
@@ -24,6 +25,10 @@ function ensurePmtilesProtocol() {
   const protocol = new Protocol();
   maplibregl.addProtocol("pmtiles", protocol.tile.bind(protocol));
   protocolRegistered = true;
+}
+
+function getDocumentTheme(): MapTheme {
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
 function pickFeaturedCameras(cameras: Camera[], perZone: number): Camera[] {
@@ -97,12 +102,21 @@ export function MapCanvas({
   const [mapReady, setMapReady] = useState(false);
   const [viewMode, setViewMode] = useState<"vector" | "satellite">("vector");
   const [heatActive, setHeatActive] = useState(false);
+  const [theme, setTheme] = useState<MapTheme>(() => getDocumentTheme());
 
   const featuredCameras = useMemo(
     () => pickFeaturedCameras(cameras, markersPerZone),
     [cameras, markersPerZone]
   );
   const zoneLabelPoints = useMemo(() => buildZoneLabelPoints(zones), [zones]);
+
+  // Keep the map style synchronized with the dashboard theme class.
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => setTheme(getDocumentTheme()));
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   // Mount the map once.
   useEffect(() => {
@@ -111,7 +125,7 @@ export function MapCanvas({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: buildVectorStyle(),
+      style: buildVectorStyle(getDocumentTheme()),
       center: ISLAMABAD_CENTER,
       zoom: initialZoom ?? ISLAMABAD_DEFAULT_ZOOM,
       maxBounds: ISLAMABAD_BOUNDS,
@@ -122,7 +136,7 @@ export function MapCanvas({
     mapRef.current = map;
 
     map.on("style.load", () => {
-      addCustomLayers(map, zoneBlobs, zoneLabelPoints);
+      addCustomLayers(map, zoneBlobs, zoneLabelPoints, getDocumentTheme());
       setMapReady(true);
     });
 
@@ -142,16 +156,17 @@ export function MapCanvas({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-    addCustomLayers(map, zoneBlobs, zoneLabelPoints);
-  }, [zoneBlobs, zoneLabelPoints, mapReady]);
+    addCustomLayers(map, zoneBlobs, zoneLabelPoints, theme);
+  }, [zoneBlobs, zoneLabelPoints, mapReady, theme]);
 
-  // Toggle vector <-> satellite style.
+  // Toggle vector <-> satellite style and refresh vector colors with the theme.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-    map.setStyle(viewMode === "vector" ? buildVectorStyle() : buildSatelliteStyle());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
+    map.setStyle(
+      viewMode === "vector" ? buildVectorStyle(theme) : buildSatelliteStyle()
+    );
+  }, [viewMode, theme, mapReady]);
 
   // Cosmetic heat overlay toggle.
   useEffect(() => {

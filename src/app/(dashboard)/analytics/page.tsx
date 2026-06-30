@@ -94,19 +94,19 @@ export default function AnalyticsPage() {
           {liveAlerts ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={severityData} layout="vertical" margin={{ left: 8, right: 16 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2a40" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#8b95a8" }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 12, fill: "#cbd5e1" }}
+                  tick={{ fontSize: 12, fill: "var(--foreground)" }}
                   axisLine={false}
                   tickLine={false}
                   width={70}
                 />
                 <Tooltip
-                  contentStyle={{ background: "#0f1626", border: "1px solid #1f2a40", borderRadius: 8, fontSize: 12 }}
-                  cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12 }}
+                  cursor={{ fill: "var(--surface-3)" }}
                 />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]} />
               </BarChart>

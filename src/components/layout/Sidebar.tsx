@@ -76,7 +76,7 @@ export function Sidebar() {
         </div>
         {!sidebarCollapsed && (
           <div className="leading-tight">
-            <div className="text-sm font-semibold text-white">SafeCity AI</div>
+            <div className="text-sm font-semibold text-foreground">SafeCity AI</div>
             <div className="text-xs text-muted-foreground">Command Center</div>
           </div>
         )}

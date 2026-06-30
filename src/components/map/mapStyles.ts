@@ -12,6 +12,8 @@ const VECTOR_TILES_URL = "pmtiles:///maps/islamabad.pmtiles";
 const SATELLITE_TILES_URL = "pmtiles:///maps/islamabad-satellite.pmtiles";
 const BOUNDARY_GEOJSON_URL = "/maps/islamabad.geojson";
 
+export type MapTheme = "dark" | "light";
+
 const MAJOR_PLACE_CLASSES = ["city", "town"];
 const MINOR_PLACE_CLASSES = [
   "village",
@@ -77,17 +79,37 @@ function placeLabelLayers(
   ] as StyleSpecification["layers"];
 }
 
-export function buildVectorStyle(): StyleSpecification {
-  const bg = "#0a0e17";
-  const water = "#13283f";
-  const landuse = "#10182a";
-  const park = "#10241a";
-  const building = "#1a2336";
-  const roadCasing = "#05070d";
-  const boundary = "#374151";
-  const labelText = "#e5e7eb";
-  const labelHalo = "#0a0e17";
-  const roadLabel = "#cbd5e1";
+export function buildVectorStyle(theme: MapTheme = "dark"): StyleSpecification {
+  const palette =
+    theme === "light"
+      ? {
+          bg: "#e9eef6",
+          water: "#b9d9ee",
+          landuse: "#dce5dc",
+          park: "#c9e2c6",
+          building: "#d5dde8",
+          roadCasing: "#f8fafc",
+          boundary: "#94a3b8",
+          labelText: "#24324a",
+          labelHalo: "#f8fafc",
+          roadLabel: "#475569",
+          residentialRoad: "#a8b3c3",
+          defaultRoad: "#8d9bad",
+        }
+      : {
+          bg: "#0a0e17",
+          water: "#13283f",
+          landuse: "#10182a",
+          park: "#10241a",
+          building: "#1a2336",
+          roadCasing: "#05070d",
+          boundary: "#374151",
+          labelText: "#e5e7eb",
+          labelHalo: "#0a0e17",
+          roadLabel: "#cbd5e1",
+          residentialRoad: "#4b5563",
+          defaultRoad: "#374151",
+        };
 
   return {
     version: 8,
@@ -99,20 +121,24 @@ export function buildVectorStyle(): StyleSpecification {
       islamabad_boundary: { type: "geojson", data: BOUNDARY_GEOJSON_URL },
     },
     layers: ([
-      { id: "background", type: "background", paint: { "background-color": bg } },
+      {
+        id: "background",
+        type: "background",
+        paint: { "background-color": palette.bg },
+      },
       {
         id: "water",
         type: "fill",
         source: "openmaptiles",
         "source-layer": "water",
-        paint: { "fill-color": water, "fill-opacity": 0.85 },
+        paint: { "fill-color": palette.water, "fill-opacity": 0.85 },
       },
       {
         id: "landuse",
         type: "fill",
         source: "openmaptiles",
         "source-layer": "landuse",
-        paint: { "fill-color": landuse, "fill-opacity": 0.35 },
+        paint: { "fill-color": palette.landuse, "fill-opacity": 0.35 },
       },
       {
         id: "park",
@@ -120,14 +146,14 @@ export function buildVectorStyle(): StyleSpecification {
         source: "openmaptiles",
         "source-layer": "landuse",
         filter: ["in", ["get", "class"], ["literal", ["park", "recreation_ground", "grass"]]],
-        paint: { "fill-color": park, "fill-opacity": 0.55 },
+        paint: { "fill-color": palette.park, "fill-opacity": 0.55 },
       },
       {
         id: "building",
         type: "fill",
         source: "openmaptiles",
         "source-layer": "building",
-        paint: { "fill-color": building, "fill-opacity": 0.55 },
+        paint: { "fill-color": palette.building, "fill-opacity": 0.55 },
       },
       {
         id: "road-casing",
@@ -135,7 +161,7 @@ export function buildVectorStyle(): StyleSpecification {
         source: "openmaptiles",
         "source-layer": "transportation",
         paint: {
-          "line-color": roadCasing,
+          "line-color": palette.roadCasing,
           "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.5, 14, 5],
         },
         layout: { "line-cap": "round", "line-join": "round" },
@@ -158,8 +184,8 @@ export function buildVectorStyle(): StyleSpecification {
             "secondary",
             "#ca8a04",
             "residential",
-            "#4b5563",
-            "#374151",
+            palette.residentialRoad,
+            palette.defaultRoad,
           ],
           "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.3, 14, 4],
         },
@@ -170,7 +196,7 @@ export function buildVectorStyle(): StyleSpecification {
         type: "line",
         source: "openmaptiles",
         "source-layer": "boundary",
-        paint: { "line-color": boundary, "line-width": 1 },
+        paint: { "line-color": palette.boundary, "line-width": 1 },
       },
       {
         id: "islamabad-outline",
@@ -191,12 +217,14 @@ export function buildVectorStyle(): StyleSpecification {
           "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 16, 13],
         },
         paint: {
-          "text-color": roadLabel,
-          "text-halo-color": labelHalo,
+          "text-color": palette.roadLabel,
+          "text-halo-color": palette.labelHalo,
           "text-halo-width": 1.5,
         },
       },
-    ] as StyleSpecification["layers"]).concat(placeLabelLayers(labelText, labelHalo)),
+    ] as StyleSpecification["layers"]).concat(
+      placeLabelLayers(palette.labelText, palette.labelHalo)
+    ),
   };
 }
 
