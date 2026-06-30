@@ -23,6 +23,8 @@ export function CameraTile({
   return (
     <CameraThumbnail
       seed={camera.thumbnailSeed}
+      feedUrl={camera.proxy_feed_url ?? camera.proxyFeedUrl}
+      playerUrl={camera.playerUrl}
       offline={camera.status === "offline"}
       className={cn(
         "group relative h-full w-full rounded-lg ring-1 ring-surface-border",

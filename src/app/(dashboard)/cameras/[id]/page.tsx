@@ -7,48 +7,33 @@ import {
   ArrowLeft,
   Bell,
   Camera as CameraIcon,
-  Download,
   Maximize2,
-  MoreVertical,
   Pause,
   Play,
-  Users,
+  ShieldCheck,
   Video,
 } from "lucide-react";
 import { CameraThumbnail } from "@/components/cameras/CameraThumbnail";
 import { EventHistoryTable } from "@/components/cameras/EventHistoryTable";
-import { AlertTimelineList } from "@/components/cameras/AlertTimelineList";
-import { MiniTrendChart } from "@/components/dashboard/MiniTrendChart";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useCamera } from "@/lib/hooks/useCameras";
-import { useAlertsByCamera } from "@/lib/hooks/useAlerts";
 import { useEventHistory } from "@/lib/hooks/useEventHistory";
-import { useTrend } from "@/lib/hooks/useDashboardStats";
 import { useUIStore } from "@/lib/store/useUIStore";
-import { densityTextClass } from "@/lib/density";
-import { formatNumber } from "@/lib/formatters";
 
 export default function CameraDetailPage() {
   const params = useParams<{ id: string }>();
   const cameraId = params.id;
-  const { data: camera, isLoading } = useCamera(cameraId);
-  const { data: alerts, isLoading: alertsLoading } = useAlertsByCamera(cameraId);
-  const { data: events, isLoading: eventsLoading } = useEventHistory(cameraId);
-  const { data: peopleCountTrend } = useTrend("people-count-today");
-  const { data: crowdDensityTrend } = useTrend("crowd-density-today");
+  const { data: camera, isLoading, error: cameraError, mutate } = useCamera(cameraId);
+  const { data: events, isLoading: eventsLoading } = useEventHistory(
+    camera?.sourceName ?? cameraId
+  );
   const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);
   const setCreateAlertModalOpen = useUIStore((s) => s.setCreateAlertModalOpen);
 
   const [playing, setPlaying] = useState(true);
 
-  if (isLoading || !camera) {
+  if (isLoading) {
     return (
       <div className="space-y-4 p-4 sm:p-6">
         <Skeleton className="h-8 w-64" />
@@ -57,8 +42,26 @@ export default function CameraDetailPage() {
     );
   }
 
-  const peopleTotal = (peopleCountTrend ?? []).reduce((s, p) => s + p.value, 0);
-  const yesterdayCompare = 18.6;
+  if (cameraError || !camera) {
+    return (
+      <div className="space-y-4 p-4 sm:p-6">
+        <Link
+          href="/cameras"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" /> Back to Cameras
+        </Link>
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-16 text-center">
+          <p className="text-sm font-medium text-destructive">
+            {cameraError ? "Camera API is unavailable" : "Camera was not found"}
+          </p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => mutate()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
@@ -92,11 +95,6 @@ export default function CameraDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-1 px-3 py-1.5 text-sm">
-            <Users className="size-4 text-primary" />
-            <span className="font-semibold">{camera.currentPersonCount}</span>
-            <span className="text-xs text-muted-foreground">People</span>
-          </div>
           <Button
             size="sm"
             className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90"
@@ -107,25 +105,20 @@ export default function CameraDetailPage() {
           >
             <Bell className="size-4" /> Create Alert
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5">
-            <Download className="size-4" /> Recordings
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="outline" aria-label="More options"><MoreVertical className="size-4" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit Camera</DropdownMenuItem>
-              <DropdownMenuItem>Move to Zone</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">Remove Camera</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-2">
-          <CameraThumbnail seed={camera.thumbnailSeed} offline={camera.status === "offline"} className="aspect-video w-full rounded-xl">
+          <CameraThumbnail
+            seed={camera.thumbnailSeed}
+            feedUrl={camera.proxy_feed_url ?? camera.proxyFeedUrl}
+            playerUrl={camera.playerUrl}
+            offline={camera.status === "offline"}
+            playing={playing}
+            interactive
+            className="aspect-video w-full rounded-xl"
+          >
             {camera.status === "online" && playing && (
               <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-xs font-medium text-white">
                 <span className="size-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
@@ -148,33 +141,8 @@ export default function CameraDetailPage() {
             </div>
           </CameraThumbnail>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">People Count (Today)</h3>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-semibold">{formatNumber(peopleTotal)}</span>
-                <span className="text-xs font-medium text-status-active">↑ {yesterdayCompare}% vs yesterday</span>
-              </div>
-              {peopleCountTrend && <MiniTrendChart data={peopleCountTrend} color="#3b82f6" height={140} showAxis />}
-            </div>
-            <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Crowd Density (Today)</h3>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className={`text-2xl font-semibold ${densityTextClass(camera.density)}`}>{camera.density}</span>
-                <span className="text-xs text-muted-foreground">{camera.densityPercent}% current</span>
-              </div>
-              {crowdDensityTrend && (
-                <MiniTrendChart data={crowdDensityTrend} color="#f59e0b" variant="area" height={140} showAxis />
-              )}
-            </div>
-          </div>
-
           <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
-            <h3 className="mb-3 text-sm font-medium">Event History (Today)</h3>
+            <h3 className="mb-3 text-sm font-medium">AI Detection Events</h3>
             <EventHistoryTable events={events} isLoading={eventsLoading} />
           </div>
         </div>
@@ -182,13 +150,36 @@ export default function CameraDetailPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-surface-border bg-surface-2 p-3">
             <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-              <Video className="size-4" /> Latest Snapshot
+              <Video className="size-4" /> Stream Details
             </h3>
-            <CameraThumbnail seed={`${camera.thumbnailSeed}-snap`} offline={camera.status === "offline"} className="aspect-video w-full rounded-lg" />
-          </div>
-          <div className="rounded-xl border border-surface-border bg-surface-2 p-3">
-            <h3 className="mb-2 text-sm font-medium">Alert Timeline (Today)</h3>
-            <AlertTimelineList alerts={alerts} isLoading={alertsLoading} />
+            <dl className="space-y-3 text-xs">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Source</dt>
+                <dd className="truncate font-medium">{camera.sourceName ?? camera.code}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd
+                  className={
+                    camera.status === "online"
+                      ? "font-medium text-status-active"
+                      : "font-medium text-status-resolved"
+                  }
+                >
+                  {camera.status === "online" ? "Online" : "Offline"}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Group</dt>
+                <dd className="font-medium">{camera.zoneName}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Playback</dt>
+                <dd className="inline-flex items-center gap-1 font-medium text-status-active">
+                  <ShieldCheck className="size-3.5" /> Secure proxy
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
       </div>

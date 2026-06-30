@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, ShieldAlert, Users, Video, VideoOff, Wifi } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MetricTrendCard } from "@/components/dashboard/MetricTrendCard";
 import { LiveAlertsPanel } from "@/components/dashboard/LiveAlertsPanel";
+import { CameraCard } from "@/components/cameras/CameraCard";
 import { MapCanvasLoader } from "@/components/map/MapCanvasLoader";
 import { CameraInfoPanel } from "@/components/map/CameraInfoPanel";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,12 @@ export default function DashboardPage() {
 
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>("alerts");
+  const liveCameraPreviews = useMemo(() => {
+    if (!cameras) return [];
+    const online = cameras.filter((camera) => camera.status === "online");
+    return (online.length ? online : cameras).slice(0, 4);
+  }, [cameras]);
+  const activeCameraCount = cameras?.filter((camera) => camera.status === "online").length;
 
   const peakZone = useMemo(() => {
     if (!cameras || !zones) return null;
@@ -62,22 +70,38 @@ export default function DashboardPage() {
         <StatCard
           icon={Video}
           label="Total Cameras"
-          value={stats ? formatNumber(stats.totalCameras) : "—"}
+          value={cameras ? formatNumber(cameras.length) : stats ? formatNumber(stats.totalCameras) : "—"}
           href="/cameras"
           hrefLabel="View all cameras"
         />
         <StatCard
           icon={Wifi}
           label="Active Cameras"
-          value={stats ? formatNumber(stats.activeCameras) : "—"}
-          trend={stats ? Math.round((stats.activeCameras / stats.totalCameras) * 1000) / 10 : undefined}
+          value={
+            activeCameraCount !== undefined
+              ? formatNumber(activeCameraCount)
+              : stats
+                ? formatNumber(stats.activeCameras)
+                : "—"
+          }
+          trend={
+            cameras?.length && activeCameraCount !== undefined
+              ? Math.round((activeCameraCount / cameras.length) * 1000) / 10
+              : undefined
+          }
           trendLabel="Online"
         />
         <StatCard
           icon={VideoOff}
           iconClassName="bg-destructive/15 text-destructive"
           label="Offline Cameras"
-          value={stats ? formatNumber(stats.offlineCameras) : "—"}
+          value={
+            cameras && activeCameraCount !== undefined
+              ? formatNumber(cameras.length - activeCameraCount)
+              : stats
+                ? formatNumber(stats.offlineCameras)
+                : "—"
+          }
           trend={stats?.offlineCamerasTrendPercent}
           trendLabel="vs yesterday"
         />
@@ -105,6 +129,27 @@ export default function DashboardPage() {
           hrefLabel="View critical"
         />
       </div>
+
+      {liveCameraPreviews.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold">Live Cameras</h2>
+              <p className="text-xs text-muted-foreground">
+                Direct WebRTC previews from the stream server
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/cameras">View all</Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {liveCameraPreviews.map((camera) => (
+              <CameraCard key={camera.id} camera={camera} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">

@@ -137,7 +137,13 @@ export default function MediaWallConfigurePage() {
       <DragOverlay>
         {activeDragCamera && (
           <div className="flex w-48 items-center gap-2 rounded-md border border-primary bg-surface-2 px-2 py-1.5 shadow-lg">
-            <CameraThumbnail seed={activeDragCamera.thumbnailSeed} className="size-8 shrink-0 rounded" />
+            <CameraThumbnail
+              seed={activeDragCamera.thumbnailSeed}
+              feedUrl={activeDragCamera.proxy_feed_url ?? activeDragCamera.proxyFeedUrl}
+              playerUrl={activeDragCamera.playerUrl}
+              offline={activeDragCamera.status === "offline"}
+              className="size-8 shrink-0 rounded"
+            />
             <span className="truncate text-xs font-medium">{activeDragCamera.name}</span>
           </div>
         )}

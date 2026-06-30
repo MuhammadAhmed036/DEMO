@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Save, Settings2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -23,6 +23,8 @@ export default function MediaWallPage() {
   const layout = useUIStore((s) => s.mediaWallLayout);
   const setLayout = useUIStore((s) => s.setMediaWallLayout);
   const assignments = useUIStore((s) => s.mediaWallAssignments);
+  const assignCameraToCell = useUIStore((s) => s.assignCameraToCell);
+  const clearMediaWallAssignments = useUIStore((s) => s.clearMediaWallAssignments);
   const addCameraToWall = useUIStore((s) => s.addCameraToWall);
   const removeCameraFromWall = useUIStore((s) => s.removeCameraFromWall);
 
@@ -43,6 +45,30 @@ export default function MediaWallPage() {
     () => new Set(assignments.map((a) => a.cameraId).filter(Boolean) as string[]),
     [assignments]
   );
+
+  useEffect(() => {
+    if (!cameras?.length) return;
+    const cameraIds = new Set(cameras.map((camera) => camera.id));
+    const hasValidAssignment = assignments.some(
+      (assignment) => assignment.cameraId && cameraIds.has(assignment.cameraId)
+    );
+    if (hasValidAssignment) return;
+
+    clearMediaWallAssignments();
+    const autoLayout: GridLayoutKey =
+      cameras.length > 9 ? "4x4" : cameras.length > 4 ? "3x3" : "2x2";
+    setLayout(autoLayout);
+    const autoCellCount = gridDimensions(autoLayout) ** 2;
+    cameras
+      .slice(0, autoCellCount)
+      .forEach((camera, index) => assignCameraToCell(index, camera.id));
+  }, [
+    cameras,
+    assignments,
+    assignCameraToCell,
+    clearMediaWallAssignments,
+    setLayout,
+  ]);
 
   function handleToggleCamera(cameraId: string) {
     if (selectedCameraIds.has(cameraId)) removeCameraFromWall(cameraId);

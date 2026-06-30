@@ -47,6 +47,10 @@ export interface Camera {
   aiFeatures: AiFeature[];
   thumbnailSeed: string;
   isFavorite: boolean;
+  proxy_feed_url?: string;
+  proxyFeedUrl?: string;
+  playerUrl?: string;
+  sourceName?: string;
 }
 
 export interface AlertRule {

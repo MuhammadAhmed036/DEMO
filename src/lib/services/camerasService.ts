@@ -1,26 +1,19 @@
 import type { Camera } from "@/lib/types";
-import { CAMERAS, getCameraById, getCamerasByZone } from "@/lib/mock/cameras";
-
-/**
- * Mock-backed data-access layer. Every export here is async and shaped like
- * a future REST/GraphQL call so swapping the body for `fetch("/api/...")`
- * (or a server action) later is a localized, one-function change — nothing
- * upstream (hooks/components) needs to change shape.
- */
-const LATENCY_MS = 220;
-
-function delay<T>(value: T, ms = LATENCY_MS): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
 
 export async function fetchCameras(): Promise<Camera[]> {
-  return delay(CAMERAS);
+  const response = await fetch("/api/stream-cameras", { cache: "no-store" });
+  if (!response.ok) throw new Error(`Camera API returned ${response.status}`);
+  return response.json() as Promise<Camera[]>;
 }
 
 export async function fetchCamerasByZone(zoneId: string): Promise<Camera[]> {
-  return delay(getCamerasByZone(zoneId));
+  const cameras = await fetchCameras();
+  return cameras.filter((camera) => camera.zoneId === zoneId);
 }
 
 export async function fetchCameraById(id: string): Promise<Camera | undefined> {
-  return delay(getCameraById(id));
+  const cameras = await fetchCameras();
+  return cameras.find(
+    (camera) => camera.id === id || camera.sourceName === id || camera.code === id
+  );
 }

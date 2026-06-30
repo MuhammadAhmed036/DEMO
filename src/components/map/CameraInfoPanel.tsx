@@ -46,7 +46,13 @@ export function CameraInfoPanel({
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <CameraThumbnail seed={camera.thumbnailSeed} offline={camera.status === "offline"} className="aspect-video w-full shrink-0">
+      <CameraThumbnail
+        seed={camera.thumbnailSeed}
+        feedUrl={camera.proxy_feed_url ?? camera.proxyFeedUrl}
+        playerUrl={camera.playerUrl}
+        offline={camera.status === "offline"}
+        className="aspect-video w-full shrink-0"
+      >
         <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
           <span className="size-1.5 animate-pulse rounded-full bg-red-500" /> Live
         </div>

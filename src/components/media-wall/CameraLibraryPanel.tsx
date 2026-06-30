@@ -30,9 +30,26 @@ export function CameraLibraryPanel({
       if (!q) return true;
       return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
     });
-    return zones
-      .map((zone) => ({ zone, cameras: filtered.filter((c) => c.zoneId === zone.id) }))
-      .filter((g) => g.cameras.length > 0);
+    const zoneById = new Map(
+      zones.map((zone) => [zone.id, { id: zone.id, name: zone.name, color: zone.color }])
+    );
+    const groups = new Map<
+      string,
+      { zone: { id: string; name: string; color: string }; cameras: Camera[] }
+    >();
+
+    for (const camera of filtered) {
+      const zone = zoneById.get(camera.zoneId) ?? {
+        id: camera.zoneId,
+        name: camera.zoneName,
+        color: "#3b82f6",
+      };
+      const group = groups.get(zone.id) ?? { zone, cameras: [] };
+      group.cameras.push(camera);
+      groups.set(zone.id, group);
+    }
+
+    return Array.from(groups.values());
   }, [cameras, zones, tab, search, favoriteIds]);
 
   return (

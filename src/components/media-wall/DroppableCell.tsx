@@ -29,7 +29,13 @@ export function DroppableCell({
         {index + 1}
       </span>
       {camera ? (
-        <CameraThumbnail seed={camera.thumbnailSeed} offline={camera.status === "offline"} className="h-full w-full">
+        <CameraThumbnail
+          seed={camera.thumbnailSeed}
+          feedUrl={camera.proxy_feed_url ?? camera.proxyFeedUrl}
+          playerUrl={camera.playerUrl}
+          offline={camera.status === "offline"}
+          className="h-full w-full"
+        >
           <button
             onClick={onClear}
             className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded bg-black/55 text-white hover:bg-black/70"
