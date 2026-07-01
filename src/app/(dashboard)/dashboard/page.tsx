@@ -12,7 +12,6 @@ import { useDashboardStats, useTrend } from "@/lib/hooks/useDashboardStats";
 import { useCameras } from "@/lib/hooks/useCameras";
 import { useZoneBlobs, useZones } from "@/lib/hooks/useZones";
 import { formatCompactNumber, formatNumber } from "@/lib/formatters";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type PanelMode = "alerts" | "camera" | "closed";
 
@@ -125,17 +124,13 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
-          {zones ? (
-            <MapCanvasLoader
-              cameras={cameras ?? []}
-              zones={zones}
-              zoneBlobs={zoneBlobs}
-              selectedCameraId={selectedCameraId}
-              onSelectCamera={handleSelectCamera}
-            />
-          ) : (
-            <Skeleton className="h-full w-full" />
-          )}
+          <MapCanvasLoader
+            cameras={cameras ?? []}
+            zones={zones ?? []}
+            zoneBlobs={zoneBlobs}
+            selectedCameraId={selectedCameraId}
+            onSelectCamera={handleSelectCamera}
+          />
         </div>
 
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
