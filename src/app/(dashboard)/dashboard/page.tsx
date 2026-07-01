@@ -125,9 +125,9 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
-          {cameras && zones ? (
+          {zones ? (
             <MapCanvasLoader
-              cameras={cameras}
+              cameras={cameras ?? []}
               zones={zones}
               zoneBlobs={zoneBlobs}
               selectedCameraId={selectedCameraId}
