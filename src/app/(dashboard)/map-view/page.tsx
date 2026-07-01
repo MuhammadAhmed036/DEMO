@@ -7,7 +7,6 @@ import { MapCanvasLoader } from "@/components/map/MapCanvasLoader";
 import type { FlyToTarget } from "@/components/map/MapCanvas";
 import { CameraInfoPanel } from "@/components/map/CameraInfoPanel";
 import { ZoneLegendPanel } from "@/components/map/ZoneLegendPanel";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCameras } from "@/lib/hooks/useCameras";
 import { useZoneBlobs, useZones } from "@/lib/hooks/useZones";
 import type { Zone } from "@/lib/types";
@@ -51,32 +50,26 @@ function MapViewContent() {
       <PageHeader title="Map View" description="Real-time geospatial view of all cameras and zones" />
       <div className="grid flex-1 gap-4 p-4 sm:p-6 lg:grid-cols-[1fr_340px]">
         <div className="h-[480px] overflow-hidden rounded-xl border border-surface-border lg:h-full">
-          {cameras && zones ? (
-            <MapCanvasLoader
-              cameras={cameras}
-              zones={zones}
-              zoneBlobs={zoneBlobs}
-              selectedCameraId={selectedCameraId}
-              onSelectCamera={handleSelectCamera}
-              flyToTarget={flyToTarget}
-              initialZoom={10.6}
-            />
-          ) : (
-            <Skeleton className="h-full w-full" />
-          )}
+          <MapCanvasLoader
+            cameras={cameras ?? []}
+            zones={zones ?? []}
+            zoneBlobs={zoneBlobs}
+            selectedCameraId={selectedCameraId}
+            onSelectCamera={handleSelectCamera}
+            flyToTarget={flyToTarget}
+            initialZoom={10.6}
+          />
         </div>
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border lg:h-full">
           {selectedCameraId ? (
             <CameraInfoPanel cameraId={selectedCameraId} onClose={() => setSelectedCameraId(null)} />
-          ) : zones && cameras ? (
+          ) : (
             <ZoneLegendPanel
-              zones={zones}
-              cameras={cameras}
+              zones={zones ?? []}
+              cameras={cameras ?? []}
               activeZoneId={activeZoneId}
               onSelectZone={handleSelectZone}
             />
-          ) : (
-            <Skeleton className="h-full w-full" />
           )}
         </div>
       </div>
