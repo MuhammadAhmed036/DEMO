@@ -152,7 +152,6 @@ export interface CameraEventDetail {
   postprocessMs: number | null;
   totalMs: number | null;
   detections: CameraEventDetection[];
-  imageUrl: string | null;
   rawImageStatus: string | null;
   imageExists: boolean;
   createdAt: string | null;
@@ -218,7 +217,6 @@ export interface AlertRuleV2 {
   seenAt: string | null;
   status: AlertRuleStatus;
   latestEventId: string | null;
-  latestEventImageUrl: string | null;
   createdBy: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -238,7 +236,6 @@ export interface AlertMatchEvent {
   note: string | null;
   seen: boolean;
   isLatest: boolean;
-  imageUrl: string | null;
   createdAt: string | null;
 }
 

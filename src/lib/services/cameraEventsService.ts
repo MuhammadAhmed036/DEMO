@@ -59,7 +59,6 @@ function normalizeCameraEvent(raw: unknown): CameraEventDetail {
     postprocessMs: asNumber(record.postprocess_ms),
     totalMs: asNumber(record.total_ms),
     detections,
-    imageUrl: asString(record.image_url),
     rawImageStatus: asString(record.raw_image_status),
     imageExists: Boolean(record.image_exists),
     createdAt: asString(record.created_at),

@@ -56,7 +56,6 @@ async function parseErrorMessage(response: Response, fallback: string): Promise<
 function normalizeAlertRule(raw: unknown): AlertRuleV2 {
   const record = asRecord(raw);
   const metadata = asRecord(record.metadata);
-  const latestEvent = asRecord(record.latest_event);
 
   return {
     id: Number(record.id) || 0,
@@ -82,7 +81,6 @@ function normalizeAlertRule(raw: unknown): AlertRuleV2 {
     seenAt: asString(record.seen_at),
     status: (asString(record.status) as AlertRuleV2["status"]) ?? "active",
     latestEventId: asString(record.latest_event_id),
-    latestEventImageUrl: asString(latestEvent.image_url),
     createdBy: asString(record.created_by),
     createdAt: asString(record.created_at),
     updatedAt: asString(record.updated_at),
@@ -104,7 +102,6 @@ function normalizeMatchEvent(raw: unknown): AlertMatchEvent {
     note: asString(record.note),
     seen: Boolean(record.seen),
     isLatest: Boolean(record.is_latest),
-    imageUrl: asString(record.image_url),
     createdAt: asString(record.created_at),
   };
 }
