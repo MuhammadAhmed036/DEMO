@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCameras } from "@/lib/hooks/useCameras";
 import { useZones } from "@/lib/hooks/useZones";
 import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
+import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
 import { useUIStore } from "@/lib/store/useUIStore";
 import type { GridLayoutKey } from "@/lib/types";
 
@@ -19,6 +20,7 @@ export default function MediaWallPage() {
   const { data: cameras } = useCameras();
   const { data: zones } = useZones();
   const { data: liveAlerts } = useLiveAlertFeed();
+  const liveOccupancy = useLiveCameraOccupancy();
 
   const layout = useUIStore((s) => s.mediaWallLayout);
   const setLayout = useUIStore((s) => s.setMediaWallLayout);
@@ -35,6 +37,17 @@ export default function MediaWallPage() {
     const map = new Map(cameras?.map((c) => [c.id, c]));
     return map;
   }, [cameras]);
+
+  // The live people-count feed keys by the detection API's camera_id, while
+  // this page's camera list comes from the separate live-stream API — the
+  // two share the same camera names in practice, so match case-insensitively.
+  const livePeopleCountByName = useMemo(() => {
+    const map = new Map<string, number>();
+    Object.values(liveOccupancy).forEach((entry) => {
+      map.set(entry.cameraId.toLowerCase(), entry.peopleCount);
+    });
+    return map;
+  }, [liveOccupancy]);
 
   const alertCameraIds = useMemo(
     () => new Set((liveAlerts ?? []).map((a) => a.cameraId)),
@@ -113,9 +126,16 @@ export default function MediaWallPage() {
             Array.from({ length: cellCount }).map((_, i) => {
               const assignment = assignments.find((a) => a.cellIndex === i);
               const camera = assignment?.cameraId ? cameraById.get(assignment.cameraId) ?? null : null;
+              const livePeopleCount = camera
+                ? (livePeopleCountByName.get((camera.sourceName ?? camera.code).toLowerCase()) ?? null)
+                : null;
               return (
                 <div key={i} className="min-h-[90px]">
-                  <CameraTile camera={camera} hasAlert={camera ? alertCameraIds.has(camera.id) : false} />
+                  <CameraTile
+                    camera={camera}
+                    hasAlert={camera ? alertCameraIds.has(camera.id) : false}
+                    livePeopleCount={livePeopleCount}
+                  />
                 </div>
               );
             })}

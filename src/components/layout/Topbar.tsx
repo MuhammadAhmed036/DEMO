@@ -4,14 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bell, Menu, Moon, Sun } from "lucide-react";
 import { useUIStore } from "@/lib/store/useUIStore";
-import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
+import { useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 
 type Theme = "dark" | "light";
 
 export function Topbar() {
   const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen);
-  const { data: liveAlerts } = useLiveAlertFeed();
-  const alertCount = liveAlerts?.length ?? 36;
+  const alertCount = useUnseenAlertMatchCount();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === "undefined") return "dark";
     return document.documentElement.classList.contains("dark") ? "dark" : "light";

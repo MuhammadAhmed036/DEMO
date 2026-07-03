@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { wsBaseUrl } from "@/lib/wsBaseUrl";
 
 export interface CameraLiveFeedState {
   connected: boolean;
@@ -25,18 +26,6 @@ const INITIAL_STATE: CameraLiveFeedState = {
 };
 
 const RECONNECT_MS = 3000;
-
-function wsBaseUrl(): string | null {
-  const base = process.env.NEXT_PUBLIC_API_BASE;
-  if (!base) return null;
-  try {
-    const url = new URL(base);
-    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    return url.toString().replace(/\/$/, "");
-  } catch {
-    return null;
-  }
-}
 
 export function liveEventImageUrl(eventId: string): string {
   return `/api/ai/v2/events/${encodeURIComponent(eventId)}/image?kind=raw`;

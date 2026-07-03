@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { appendAlertEvent, fetchAlertRules } from "@/lib/services/alertRulesService";
+import { wsBaseUrl } from "@/lib/wsBaseUrl";
 import type { AlertRuleV2 } from "@/lib/types";
 
 const COOLDOWN_MS = 15_000;
@@ -16,18 +17,6 @@ interface NormBox {
 
 function intersects(a: NormBox, b: NormBox): boolean {
   return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
-}
-
-function wsBaseUrl(): string | null {
-  const base = process.env.NEXT_PUBLIC_API_BASE;
-  if (!base) return null;
-  try {
-    const url = new URL(base);
-    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    return url.toString().replace(/\/$/, "");
-  } catch {
-    return null;
-  }
 }
 
 type UnknownRecord = Record<string, unknown>;

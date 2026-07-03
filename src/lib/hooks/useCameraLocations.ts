@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchCameraLocations,
+  fetchCameraPeopleCountSeries,
   fetchLatestCameraSnapshot,
   fetchZoneSummaries,
   updateCameraLocation,
@@ -25,6 +26,26 @@ export function useCameraSnapshot(cameraId: string | null) {
     queryKey: ["camera-snapshot", cameraId],
     queryFn: () => fetchLatestCameraSnapshot(cameraId as string),
     enabled: Boolean(cameraId),
+  });
+}
+
+const SERIES_WINDOW_HOURS = 2;
+
+export function useCameraPeopleCountSeries(cameraId: string | null) {
+  return useQuery({
+    queryKey: ["camera-people-count-series", cameraId],
+    queryFn: () => {
+      const toTs = new Date();
+      const fromTs = new Date(toTs.getTime() - SERIES_WINDOW_HOURS * 3_600_000);
+      return fetchCameraPeopleCountSeries(cameraId as string, {
+        fromTs: fromTs.toISOString(),
+        toTs: toTs.toISOString(),
+        bucket: "5m",
+        mode: "max",
+      });
+    },
+    enabled: Boolean(cameraId),
+    refetchInterval: 30_000,
   });
 }
 

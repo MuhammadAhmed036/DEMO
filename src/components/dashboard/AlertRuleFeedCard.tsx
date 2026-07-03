@@ -6,6 +6,8 @@ import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
 import { Button } from "@/components/ui/button";
 import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
 import { useMarkAlertSeen, useUpdateAlertRuleStatus } from "@/lib/hooks/useAlertRules";
+import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
+import { effectiveUnseenCount } from "@/lib/alertUnseen";
 import { formatTime } from "@/lib/formatters";
 
 export function AlertRuleFeedCard({
@@ -17,6 +19,8 @@ export function AlertRuleFeedCard({
 }) {
   const markSeen = useMarkAlertSeen();
   const updateStatus = useUpdateAlertRuleStatus();
+  const baseline = useAlertSeenBaselineStore((s) => s.baselines[rule.alertId] ?? 0);
+  const unseen = effectiveUnseenCount(rule, baseline);
 
   return (
     <div className="rounded-lg border border-surface-border bg-surface-2 p-3">
@@ -48,9 +52,9 @@ export function AlertRuleFeedCard({
           <div className="truncate text-xs text-muted-foreground">
             {rule.cameraId} &middot; {rule.zone ?? "no zone"}
           </div>
-          {rule.unseenCount > 0 && (
+          {unseen > 0 && (
             <div className="mt-0.5 text-[11px] font-medium text-destructive">
-              {rule.unseenCount} new match{rule.unseenCount === 1 ? "" : "es"}
+              {unseen} new match{unseen === 1 ? "" : "es"}
             </div>
           )}
         </div>
@@ -64,7 +68,7 @@ export function AlertRuleFeedCard({
         >
           <Eye className="size-3.5" /> View Camera
         </Button>
-        {!rule.seen && (
+        {unseen > 0 && (
           <Button
             size="sm"
             variant="outline"

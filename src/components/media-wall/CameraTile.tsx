@@ -7,10 +7,13 @@ export function CameraTile({
   camera,
   hasAlert,
   onExpand,
+  livePeopleCount,
 }: {
   camera: Camera | null;
   hasAlert?: boolean;
   onExpand?: () => void;
+  /** Live person count from the detection API's people-count feed; `null`/`undefined` while no live reading has arrived yet. */
+  livePeopleCount?: number | null;
 }) {
   if (!camera) {
     return (
@@ -45,7 +48,7 @@ export function CameraTile({
       </div>
       {camera.status === "online" && (
         <div className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] text-white">
-          <Users className="size-3" /> {camera.currentPersonCount}
+          <Users className="size-3" /> {livePeopleCount ?? "—"}
         </div>
       )}
       <button

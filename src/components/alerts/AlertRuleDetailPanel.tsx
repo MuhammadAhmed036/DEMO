@@ -14,6 +14,8 @@ import {
   useUpdateAlertRuleStatus,
 } from "@/lib/hooks/useAlertRules";
 import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
+import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
+import { effectiveUnseenCount } from "@/lib/alertUnseen";
 import { formatDateTime } from "@/lib/formatters";
 
 export function AlertRuleDetailPanel({
@@ -30,6 +32,8 @@ export function AlertRuleDetailPanel({
   const markSeen = useMarkAlertSeen();
   const updateStatus = useUpdateAlertRuleStatus();
   const deleteRule = useDeleteAlertRule();
+  const baseline = useAlertSeenBaselineStore((s) => (alertId ? (s.baselines[alertId] ?? 0) : 0));
+  const unseen = rule ? effectiveUnseenCount(rule, baseline) : 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -152,7 +156,7 @@ export function AlertRuleDetailPanel({
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  disabled={rule.seen || markSeen.isPending}
+                  disabled={unseen === 0 || markSeen.isPending}
                   onClick={() => markSeen.mutate({ alertId: rule.alertId })}
                   className="gap-1.5"
                 >

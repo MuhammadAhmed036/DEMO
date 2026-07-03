@@ -10,10 +10,16 @@ import { CameraLiveInfoPanel } from "@/components/map/CameraLiveInfoPanel";
 import { Button } from "@/components/ui/button";
 import { useDashboardStats, useTrend } from "@/lib/hooks/useDashboardStats";
 import { useCameras } from "@/lib/hooks/useCameras";
-import { useCameraLocations, useUpdateCameraLocation } from "@/lib/hooks/useCameraLocations";
-import { useAlertStats } from "@/lib/hooks/useAlertRules";
+import {
+  useCameraLocations,
+  useCameraPeopleCountSeries,
+  useUpdateCameraLocation,
+} from "@/lib/hooks/useCameraLocations";
+import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
+import { useAlertStats, useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import { useZones } from "@/lib/hooks/useZones";
-import { formatCompactNumber, formatNumber } from "@/lib/formatters";
+import { densityTierBadgeTone, densityTierColor, densityTierFromCount } from "@/lib/density";
+import { formatCompactNumber, formatNumber, formatTime } from "@/lib/formatters";
 
 type PanelMode = "alerts" | "camera" | "closed";
 
@@ -24,6 +30,8 @@ export default function DashboardPage() {
   const { data: cameraLocations } = useCameraLocations();
   const updateLocation = useUpdateCameraLocation();
   const { data: alertStats } = useAlertStats();
+  const unseenMatchCount = useUnseenAlertMatchCount();
+  const liveOccupancy = useLiveCameraOccupancy();
   const { data: alertTrend } = useTrend("active-alert-trend");
   const { data: offlineTrend } = useTrend("offline-cameras-trend");
   const { data: personTrend } = useTrend("person-count-trend");
@@ -53,12 +61,19 @@ export default function DashboardPage() {
     return zone ? { zone, persons: bestValue } : null;
   }, [cameras, zones]);
 
-  const highestDensityCamera = useMemo(() => {
-    if (!cameras) return null;
-    return [...cameras]
-      .filter((c) => c.status === "online")
-      .sort((a, b) => b.densityPercent - a.densityPercent)[0];
-  }, [cameras]);
+  const highestOccupancy = useMemo(() => {
+    const entries = Object.values(liveOccupancy);
+    if (entries.length === 0) return null;
+    return [...entries].sort((a, b) => b.peopleCount - a.peopleCount)[0];
+  }, [liveOccupancy]);
+
+  const { data: highestOccupancySeries } = useCameraPeopleCountSeries(
+    highestOccupancy?.cameraId ?? null
+  );
+  const highestOccupancyTrend = useMemo(
+    () => highestOccupancySeries?.map((p) => ({ label: formatTime(p.time), value: p.peopleCount })),
+    [highestOccupancySeries]
+  );
 
   function handleSelectCamera(cameraId: string) {
     setSelectedLocationCameraId(cameraId);
@@ -129,7 +144,7 @@ export default function DashboardPage() {
           icon={ShieldAlert}
           iconClassName="bg-severity-critical/15 text-severity-critical"
           label="Unseen Alert Matches"
-          value={alertStats ? formatNumber(alertStats.unseen) : "—"}
+          value={formatNumber(unseenMatchCount)}
           href="/alerts"
           hrefLabel="View alerts"
         />
@@ -185,17 +200,22 @@ export default function DashboardPage() {
             chartColor="#a855f7"
           />
         )}
-        {highestDensityCamera && personTrend && (
-          <MetricTrendCard
-            label="Highest Density Camera"
-            badge="Critical"
-            badgeTone="critical"
-            value={highestDensityCamera.code}
-            subLabel={`${highestDensityCamera.zoneName} · ${highestDensityCamera.currentPersonCount} Persons`}
-            chartData={personTrend}
-            chartColor="#ef4444"
-          />
-        )}
+        {highestOccupancy &&
+          highestOccupancyTrend &&
+          (() => {
+            const tier = densityTierFromCount(highestOccupancy.peopleCount);
+            return (
+              <MetricTrendCard
+                label="Highest Density Camera"
+                badge={tier}
+                badgeTone={densityTierBadgeTone(tier)}
+                value={highestOccupancy.cameraName}
+                subLabel={`${highestOccupancy.zone ?? "No zone"} · ${highestOccupancy.peopleCount} Person${highestOccupancy.peopleCount === 1 ? "" : "s"}`}
+                chartData={highestOccupancyTrend}
+                chartColor={densityTierColor(tier)}
+              />
+            );
+          })()}
         {alertTrend && (
           <MetricTrendCard
             label="Active Alert Trend (24H)"

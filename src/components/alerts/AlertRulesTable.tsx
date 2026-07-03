@@ -15,6 +15,8 @@ import {
   useMarkAlertSeen,
   useUpdateAlertRuleStatus,
 } from "@/lib/hooks/useAlertRules";
+import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
+import { effectiveUnseenCount } from "@/lib/alertUnseen";
 import { formatDateTime } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,7 @@ export function AlertRulesTable({
   const markSeen = useMarkAlertSeen();
   const updateStatus = useUpdateAlertRuleStatus();
   const deleteRule = useDeleteAlertRule();
+  const baselines = useAlertSeenBaselineStore((s) => s.baselines);
 
   if (isLoading) {
     return (
@@ -66,7 +69,9 @@ export function AlertRulesTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-surface-border">
-          {rules.map((rule) => (
+          {rules.map((rule) => {
+            const unseen = effectiveUnseenCount(rule, baselines[rule.alertId] ?? 0);
+            return (
             <tr
               key={rule.alertId}
               onClick={() => onSelectRule(rule.alertId)}
@@ -86,9 +91,9 @@ export function AlertRulesTable({
               <td className="px-3 py-3 text-muted-foreground">{rule.zone ?? "—"}</td>
               <td className="px-3 py-3">
                 <span className="font-medium">{rule.eventCount}</span>
-                {rule.unseenCount > 0 && (
+                {unseen > 0 && (
                   <span className="ml-1.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                    {rule.unseenCount} new
+                    {unseen} new
                   </span>
                 )}
               </td>
@@ -110,7 +115,7 @@ export function AlertRulesTable({
                       View Camera
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      disabled={rule.seen || markSeen.isPending}
+                      disabled={unseen === 0 || markSeen.isPending}
                       onClick={() => markSeen.mutate({ alertId: rule.alertId })}
                     >
                       Mark Seen
@@ -138,7 +143,8 @@ export function AlertRulesTable({
                 </DropdownMenu>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

@@ -99,6 +99,41 @@ export async function fetchLatestCameraSnapshot(cameraId: string): Promise<Camer
   };
 }
 
+export interface PeopleCountPoint {
+  time: string;
+  peopleCount: number;
+  eventCount: number;
+}
+
+export async function fetchCameraPeopleCountSeries(
+  cameraId: string,
+  options: { fromTs: string; toTs: string; bucket?: string; mode?: string }
+): Promise<PeopleCountPoint[]> {
+  const params = new URLSearchParams({
+    from_ts: options.fromTs,
+    to_ts: options.toTs,
+    bucket: options.bucket ?? "5m",
+    mode: options.mode ?? "max",
+  });
+  const response = await fetch(
+    `/api/ai/v2/cameras/${encodeURIComponent(cameraId)}/people-count-series?${params.toString()}`,
+    { cache: "no-store" }
+  );
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, `People-count series API returned ${response.status}`));
+  }
+  const payload = asRecord(await response.json());
+  const points = Array.isArray(payload.points) ? payload.points : [];
+  return points.map((raw: unknown) => {
+    const record = asRecord(raw);
+    return {
+      time: String(record.time ?? ""),
+      peopleCount: asNumber(record.people_count) ?? 0,
+      eventCount: asNumber(record.event_count) ?? 0,
+    };
+  });
+}
+
 export async function fetchZoneSummaries(): Promise<ZoneSummary[]> {
   const response = await fetch("/api/ai/v2/zones", { cache: "no-store" });
   if (!response.ok) {

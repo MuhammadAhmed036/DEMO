@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
-import { useAlertRules, useAlertStats } from "@/lib/hooks/useAlertRules";
+import { useAlertRules, useAlertStats, useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import { AlertRuleFeedCard } from "@/components/dashboard/AlertRuleFeedCard";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +27,7 @@ export function LiveAlertRulesPanel({
 }) {
   const { data: rules, isLoading } = useAlertRules();
   const { data: stats } = useAlertStats();
+  const unseenMatchCount = useUnseenAlertMatchCount();
   const [statusFilter, setStatusFilter] = useState<AlertRuleStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -55,7 +56,7 @@ export function LiveAlertRulesPanel({
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">Live Alert Rules</h3>
           <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">
-            {stats?.unseen ?? 0}
+            {unseenMatchCount}
           </span>
         </div>
         {onClose && (

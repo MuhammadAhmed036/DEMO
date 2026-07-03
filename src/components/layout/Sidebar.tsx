@@ -6,7 +6,7 @@ import { ChevronDown, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/lib/nav";
 import { useUIStore } from "@/lib/store/useUIStore";
-import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
+import { useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,8 +60,7 @@ export function Sidebar() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const mobileNavOpen = useUIStore((s) => s.mobileNavOpen);
   const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen);
-  const { data: liveAlerts } = useLiveAlertFeed();
-  const alertCount = liveAlerts?.length ?? 36;
+  const alertCount = useUnseenAlertMatchCount();
 
   const content = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
