@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchCameraLocation,
   fetchCameraLocations,
   fetchCameraPeopleCountSeries,
   fetchLatestCameraSnapshot,
@@ -13,6 +14,15 @@ export function useCameraLocations() {
   return useQuery({
     queryKey: ["camera-locations"],
     queryFn: fetchCameraLocations,
+    refetchInterval: REFRESH_MS,
+  });
+}
+
+export function useCameraLocation(cameraId: string | null) {
+  return useQuery({
+    queryKey: ["camera-locations", "detail", cameraId],
+    queryFn: () => fetchCameraLocation(cameraId as string),
+    enabled: Boolean(cameraId),
     refetchInterval: REFRESH_MS,
   });
 }

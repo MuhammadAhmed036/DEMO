@@ -3,31 +3,27 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Bell,
-  Camera as CameraIcon,
-  Maximize2,
-  Pause,
-  Play,
-  ShieldCheck,
-  Video,
-} from "lucide-react";
+import { ArrowLeft, Bell, Camera as CameraIcon, Maximize2, Pause, Play } from "lucide-react";
 import { CameraThumbnail } from "@/components/cameras/CameraThumbnail";
-import { EventHistoryTable } from "@/components/cameras/EventHistoryTable";
+import { CameraEventsDetailTable } from "@/components/cameras/CameraEventsDetailTable";
+import { CameraRegistryDetails } from "@/components/cameras/CameraRegistryDetails";
+import { CameraLiveStatsPanel } from "@/components/cameras/CameraLiveStatsPanel";
+import { CameraAlertRulesCard } from "@/components/cameras/CameraAlertRulesCard";
+import { CameraRetentionCard } from "@/components/cameras/CameraRetentionCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCamera } from "@/lib/hooks/useCameras";
-import { useEventHistory } from "@/lib/hooks/useEventHistory";
+import { useCameraLocation } from "@/lib/hooks/useCameraLocations";
+import { useCameraEvents } from "@/lib/hooks/useCameraDetail";
 import { useUIStore } from "@/lib/store/useUIStore";
 
 export default function CameraDetailPage() {
   const params = useParams<{ id: string }>();
   const cameraId = params.id;
   const { data: camera, isLoading, error: cameraError, mutate } = useCamera(cameraId);
-  const { data: events, isLoading: eventsLoading } = useEventHistory(
-    camera?.sourceName ?? cameraId
-  );
+  const registryCameraId = camera?.sourceName ?? cameraId;
+  const { data: registryCamera } = useCameraLocation(registryCameraId);
+  const { data: events, isLoading: eventsLoading } = useCameraEvents(registryCameraId, 25);
   const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);
   const setCreateAlertModalOpen = useUIStore((s) => s.setCreateAlertModalOpen);
 
@@ -72,7 +68,7 @@ export default function CameraDetailPage() {
       <div className="flex flex-col gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-lg font-semibold">{camera.name}</h1>
+            <h1 className="text-lg font-semibold">{registryCamera?.cameraName ?? camera.name}</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                 camera.status === "online"
@@ -84,22 +80,15 @@ export default function CameraDetailPage() {
             </span>
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            @{camera.code} · {camera.location}
+            @{camera.code} · {registryCamera?.zone ?? camera.location}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {camera.aiFeatures.map((f) => (
-              <span key={f.id} className="rounded-full border border-surface-border bg-surface-1 px-2 py-0.5 text-[11px] text-muted-foreground">
-                {f.label}
-              </span>
-            ))}
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90"
             onClick={() => {
-              setSelectedCameraId(camera.id);
+              setSelectedCameraId(registryCameraId);
               setCreateAlertModalOpen(true);
             }}
           >
@@ -109,7 +98,7 @@ export default function CameraDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-2">
+        <div className="space-y-4">
           <CameraThumbnail
             seed={camera.thumbnailSeed}
             feedUrl={camera.proxy_feed_url ?? camera.proxyFeedUrl}
@@ -141,46 +130,18 @@ export default function CameraDetailPage() {
             </div>
           </CameraThumbnail>
 
+          <CameraLiveStatsPanel cameraId={registryCameraId} />
+
           <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
-            <h3 className="mb-3 text-sm font-medium">AI Detection Events</h3>
-            <EventHistoryTable events={events} isLoading={eventsLoading} />
+            <h3 className="mb-3 text-sm font-medium">Detection Events</h3>
+            <CameraEventsDetailTable events={events} isLoading={eventsLoading} />
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-surface-border bg-surface-2 p-3">
-            <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-              <Video className="size-4" /> Stream Details
-            </h3>
-            <dl className="space-y-3 text-xs">
-              <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Source</dt>
-                <dd className="truncate font-medium">{camera.sourceName ?? camera.code}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Status</dt>
-                <dd
-                  className={
-                    camera.status === "online"
-                      ? "font-medium text-status-active"
-                      : "font-medium text-status-resolved"
-                  }
-                >
-                  {camera.status === "online" ? "Online" : "Offline"}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Group</dt>
-                <dd className="font-medium">{camera.zoneName}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Playback</dt>
-                <dd className="inline-flex items-center gap-1 font-medium text-status-active">
-                  <ShieldCheck className="size-3.5" /> Secure proxy
-                </dd>
-              </div>
-            </dl>
-          </div>
+          {registryCamera && <CameraRegistryDetails camera={registryCamera} />}
+          <CameraAlertRulesCard cameraId={registryCameraId} />
+          <CameraRetentionCard cameraId={registryCameraId} />
         </div>
       </div>
     </div>

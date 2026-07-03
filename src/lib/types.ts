@@ -106,14 +106,6 @@ export interface DashboardStats {
   activeAlertTrendPercent: number;
 }
 
-export interface EventHistoryItem {
-  id: string;
-  time: string;
-  type: string;
-  details: string;
-  confidence: number;
-}
-
 export interface CameraLocation {
   id: number;
   cameraId: string;
@@ -129,7 +121,52 @@ export interface CameraLocation {
   floor: string | null;
   description: string | null;
   enabled: boolean;
+  createdAt: string | null;
   updatedAt: string | null;
+}
+
+export interface CameraEventDetection {
+  classId: number;
+  className: string;
+  confidence: number;
+  bboxXyxy: [number, number, number, number];
+}
+
+/** One real detection event for a camera, from `/api/v2/events`. */
+export interface CameraEventDetail {
+  eventId: string;
+  cameraId: string;
+  cameraIp: string | null;
+  zone: string | null;
+  scene: string | null;
+  detectionTs: string | null;
+  modelName: string | null;
+  backend: string | null;
+  device: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  detectionCount: number;
+  decodeMs: number | null;
+  preprocessMs: number | null;
+  inferenceMs: number | null;
+  postprocessMs: number | null;
+  totalMs: number | null;
+  detections: CameraEventDetection[];
+  imageUrl: string | null;
+  rawImageStatus: string | null;
+  imageExists: boolean;
+  createdAt: string | null;
+}
+
+/** Per-camera raw-image retention health, from `/api/camera-retention`. */
+export interface CameraRetentionInfo {
+  cameraId: string;
+  totalEvents: number;
+  withRaw: number;
+  retainedRaw: number;
+  target: number;
+  remainingToTarget: number;
+  latestTs: string | null;
 }
 
 export interface ZoneSummary {

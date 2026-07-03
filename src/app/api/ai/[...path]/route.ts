@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const GET_ALLOWED_EXACT = new Set(["stats", "events", "cameras"]);
+const GET_ALLOWED_EXACT = new Set(["stats", "events", "cameras", "camera-retention"]);
 const GET_ALLOWED_PREFIXES = ["v2/cameras", "v2/zones", "v2/events", "v2/alerts"];
 const WRITE_ALLOWED_PREFIXES = ["v2/cameras", "v2/alerts"];
 

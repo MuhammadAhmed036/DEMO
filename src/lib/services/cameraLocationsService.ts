@@ -32,6 +32,7 @@ function normalizeCameraLocation(raw: unknown): CameraLocation {
     floor: asString(record.floor),
     description: asString(record.description),
     enabled: Boolean(record.enabled),
+    createdAt: asString(record.created_at),
     updatedAt: asString(record.updated_at),
   };
 }
@@ -51,6 +52,16 @@ export async function fetchCameraLocations(): Promise<CameraLocation[]> {
   const payload = asRecord(await response.json());
   const rows = Array.isArray(payload.cameras) ? payload.cameras : [];
   return rows.map(normalizeCameraLocation);
+}
+
+export async function fetchCameraLocation(cameraId: string): Promise<CameraLocation> {
+  const response = await fetch(`/api/ai/v2/cameras/${encodeURIComponent(cameraId)}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, `Camera registry API returned ${response.status}`));
+  }
+  return normalizeCameraLocation(await response.json());
 }
 
 export async function updateCameraLocation(
