@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchAggregatePeopleCountSeries,
   fetchCameraLocation,
   fetchCameraLocations,
   fetchCameraPeopleCountSeries,
@@ -55,6 +56,25 @@ export function useCameraPeopleCountSeries(cameraId: string | null) {
       });
     },
     enabled: Boolean(cameraId),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useAggregatePeopleCountSeries(cameraIds: string[]) {
+  const sortedIds = [...cameraIds].sort();
+  return useQuery({
+    queryKey: ["aggregate-people-count-series", sortedIds],
+    queryFn: () => {
+      const toTs = new Date();
+      const fromTs = new Date(toTs.getTime() - SERIES_WINDOW_HOURS * 3_600_000);
+      return fetchAggregatePeopleCountSeries(sortedIds, {
+        fromTs: fromTs.toISOString(),
+        toTs: toTs.toISOString(),
+        bucket: "5m",
+        mode: "max",
+      });
+    },
+    enabled: sortedIds.length > 0,
     refetchInterval: 30_000,
   });
 }

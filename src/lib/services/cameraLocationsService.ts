@@ -145,6 +145,34 @@ export async function fetchCameraPeopleCountSeries(
   });
 }
 
+/**
+ * Sums real per-camera people-count series into one city-wide total per
+ * time bucket. There's no server-side "all cameras" aggregate endpoint, so
+ * this fetches each camera's series in parallel and adds them up — bounded
+ * by the number of registered cameras, which is small for this deployment.
+ */
+export async function fetchAggregatePeopleCountSeries(
+  cameraIds: string[],
+  options: { fromTs: string; toTs: string; bucket?: string; mode?: string }
+): Promise<PeopleCountPoint[]> {
+  const perCamera = await Promise.all(
+    cameraIds.map((cameraId) =>
+      fetchCameraPeopleCountSeries(cameraId, options).catch(() => [] as PeopleCountPoint[])
+    )
+  );
+
+  const totalsByTime = new Map<string, number>();
+  perCamera.forEach((series) => {
+    series.forEach((point) => {
+      totalsByTime.set(point.time, (totalsByTime.get(point.time) ?? 0) + point.peopleCount);
+    });
+  });
+
+  return Array.from(totalsByTime.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, peopleCount]) => ({ time, peopleCount, eventCount: 0 }));
+}
+
 export async function fetchZoneSummaries(): Promise<ZoneSummary[]> {
   const response = await fetch("/api/ai/v2/zones", { cache: "no-store" });
   if (!response.ok) {

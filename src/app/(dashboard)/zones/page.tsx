@@ -4,62 +4,91 @@ import { useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ZoneCard } from "@/components/zones/ZoneCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useZones } from "@/lib/hooks/useZones";
-import { useCameras } from "@/lib/hooks/useCameras";
-import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
+import { useZoneSummaries } from "@/lib/hooks/useCameraLocations";
+import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
+import { useAlertRules } from "@/lib/hooks/useAlertRules";
+import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
+import { effectiveUnseenCount } from "@/lib/alertUnseen";
+
+interface ZoneStats {
+  persons: number;
+  reporting: number;
+  activeAlerts: number;
+  unseenMatches: number;
+}
 
 export default function ZonesPage() {
-  const { data: zones, isLoading } = useZones();
-  const { data: cameras } = useCameras();
-  const { data: liveAlerts } = useLiveAlertFeed();
+  const { data: zoneSummaries, isLoading } = useZoneSummaries();
+  const liveOccupancy = useLiveCameraOccupancy();
+  const { data: rules } = useAlertRules();
+  const baselines = useAlertSeenBaselineStore((s) => s.baselines);
 
   const zoneStats = useMemo(() => {
-    const map = new Map<string, { online: number; offline: number; persons: number; alerts: number }>();
-    zones?.forEach((z) => map.set(z.id, { online: 0, offline: 0, persons: 0, alerts: 0 }));
-    cameras?.forEach((c) => {
-      const entry = map.get(c.zoneId);
-      if (!entry) return;
-      if (c.status === "online") entry.online += 1;
-      else entry.offline += 1;
-      entry.persons += c.currentPersonCount;
+    const map = new Map<string, ZoneStats>();
+    zoneSummaries?.forEach((z) => map.set(z.zone, { persons: 0, reporting: 0, activeAlerts: 0, unseenMatches: 0 }));
+
+    Object.values(liveOccupancy).forEach((entry) => {
+      if (!entry.zone) return;
+      const stats = map.get(entry.zone);
+      if (!stats) return;
+      stats.persons += entry.peopleCount;
+      stats.reporting += 1;
     });
-    liveAlerts?.forEach((a) => {
-      const entry = map.get(a.zoneId);
-      if (entry) entry.alerts += 1;
+
+    rules?.forEach((rule) => {
+      if (!rule.zone) return;
+      const stats = map.get(rule.zone);
+      if (!stats) return;
+      if (rule.status === "active") stats.activeAlerts += 1;
+      stats.unseenMatches += effectiveUnseenCount(rule, baselines[rule.alertId] ?? 0);
     });
+
     return map;
-  }, [zones, cameras, liveAlerts]);
+  }, [zoneSummaries, liveOccupancy, rules, baselines]);
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <PageHeader
         title="Zones"
-        description="Operational zones across Islamabad and their current activity"
+        description="Operational zones from the camera registry, with live occupancy and alert activity"
       />
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-44 w-full rounded-xl" />
           ))}
         </div>
       )}
 
-      {zones && (
+      {zoneSummaries && zoneSummaries.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {zones.map((zone) => {
-            const stats = zoneStats.get(zone.id) ?? { online: 0, offline: 0, persons: 0, alerts: 0 };
+          {zoneSummaries.map((zone) => {
+            const stats = zoneStats.get(zone.zone) ?? {
+              persons: 0,
+              reporting: 0,
+              activeAlerts: 0,
+              unseenMatches: 0,
+            };
             return (
               <ZoneCard
-                key={zone.id}
-                zone={zone}
-                onlineCameras={stats.online}
-                offlineCameras={stats.offline}
+                key={zone.zone}
+                zone={zone.zone}
+                cameraCount={zone.cameraCount}
+                enabledCount={zone.enabledCount}
+                reportingCount={stats.reporting}
                 totalPersons={stats.persons}
-                activeAlerts={stats.alerts}
+                activeAlerts={stats.activeAlerts}
+                unseenMatches={stats.unseenMatches}
               />
             );
           })}
+        </div>
+      )}
+
+      {zoneSummaries && zoneSummaries.length === 0 && (
+        <div className="rounded-xl border border-surface-border bg-surface-2 py-16 text-center text-sm text-muted-foreground">
+          No zones registered in the camera registry yet.
         </div>
       )}
     </div>
