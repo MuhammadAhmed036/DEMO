@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusFooter } from "@/components/layout/StatusFooter";
 import { CreateAlertModal } from "@/components/alerts/CreateAlertModal";
+import { AlertWatcherMount } from "@/components/alerts/AlertWatcherMount";
 
 export default function DashboardShellLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardShellLayout({
         <StatusFooter />
       </div>
       <CreateAlertModal />
+      <AlertWatcherMount />
     </div>
   );
 }

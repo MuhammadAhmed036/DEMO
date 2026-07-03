@@ -53,13 +53,6 @@ export interface Camera {
   sourceName?: string;
 }
 
-export interface AlertRule {
-  id: string;
-  label: string;
-  severity: AlertSeverity;
-  enabled: boolean;
-}
-
 export interface Alert {
   id: string;
   title: string;
@@ -144,6 +137,79 @@ export interface ZoneSummary {
   cameraCount: number;
   withCoords: number;
   enabledCount: number;
+}
+
+export interface AlertBoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  region?: string;
+}
+
+export interface AlertConditions {
+  condition: string;
+  triggerInside: boolean;
+  triggerOutside: boolean;
+  personLabel: string;
+}
+
+export type AlertRuleStatus = "active" | "resolved" | "muted" | string;
+
+/** A saved region-based alert rule from the real `/api/v2/alerts` backend. */
+export interface AlertRuleV2 {
+  id: number;
+  alertId: string;
+  cameraId: string;
+  zone: string | null;
+  collectionId: string | null;
+  collectionName: string | null;
+  label: string | null;
+  name: string | null;
+  description: string | null;
+  sourceEventId: string | null;
+  boundingBox: AlertBoundingBox | null;
+  conditions: AlertConditions | null;
+  refImageWidth: number | null;
+  refImageHeight: number | null;
+  personCountInside: number;
+  personCountOutside: number;
+  seenCount: number;
+  unseenCount: number;
+  seen: boolean;
+  seenBy: string[];
+  seenAt: string | null;
+  status: AlertRuleStatus;
+  latestEventId: string | null;
+  latestEventImageUrl: string | null;
+  createdBy: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  eventCount: number;
+}
+
+/** One matched-detection row from an alert rule's `/events` history. */
+export interface AlertMatchEvent {
+  id: number;
+  alertId: string;
+  eventId: string;
+  cameraId: string;
+  detectionTs: string | null;
+  personCountInside: number;
+  personCountOutside: number;
+  boundingBox: AlertBoundingBox | null;
+  note: string | null;
+  seen: boolean;
+  isLatest: boolean;
+  imageUrl: string | null;
+  createdAt: string | null;
+}
+
+export interface AlertStatsSummary {
+  total: number;
+  byStatus: Record<string, number>;
+  seen: number;
+  unseen: number;
 }
 
 export type GridLayoutKey = "1x1" | "2x2" | "3x3" | "4x4" | "5x5";

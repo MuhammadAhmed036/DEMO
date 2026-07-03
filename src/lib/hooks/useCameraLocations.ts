@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchCameraLocations,
+  fetchLatestCameraSnapshot,
   fetchZoneSummaries,
   updateCameraLocation,
 } from "@/lib/services/cameraLocationsService";
@@ -17,6 +18,14 @@ export function useCameraLocations() {
 
 export function useZoneSummaries() {
   return useQuery({ queryKey: ["zone-summaries"], queryFn: fetchZoneSummaries });
+}
+
+export function useCameraSnapshot(cameraId: string | null) {
+  return useQuery({
+    queryKey: ["camera-snapshot", cameraId],
+    queryFn: () => fetchLatestCameraSnapshot(cameraId as string),
+    enabled: Boolean(cameraId),
+  });
 }
 
 export function useUpdateCameraLocation() {

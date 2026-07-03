@@ -1,47 +1,28 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AlertFilters } from "@/components/alerts/AlertFilters";
-import { AlertsTable } from "@/components/alerts/AlertsTable";
-import { AlertDetailPanel } from "@/components/alerts/AlertDetailPanel";
-import { PaginationBar } from "@/components/layout/PaginationBar";
+import { AlertRuleFilters } from "@/components/alerts/AlertRuleFilters";
+import { AlertRulesTable } from "@/components/alerts/AlertRulesTable";
+import { AlertRuleDetailPanel } from "@/components/alerts/AlertRuleDetailPanel";
 import { Button } from "@/components/ui/button";
-import { useAlerts, useAlertSummary } from "@/lib/hooks/useAlerts";
+import { useAlertRules, useAlertStats } from "@/lib/hooks/useAlertRules";
 import { useUIStore } from "@/lib/store/useUIStore";
-import type { AlertFilters as AlertFiltersValue } from "@/lib/services/alertsService";
-import type { AlertSeverity } from "@/lib/types";
+import type { AlertRuleFilters as AlertRuleFiltersValue } from "@/lib/services/alertRulesService";
 
-const PAGE_SIZE = 10;
-
-function AlertsPageContent() {
-  const searchParams = useSearchParams();
+export default function AlertsPage() {
   const router = useRouter();
-
-  const [filters, setFilters] = useState<AlertFiltersValue>({
-    tab: "all",
-    severity: (searchParams.get("severity") as AlertSeverity | null) ?? "all",
-    status: "all",
-    search: "",
-  });
-  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<AlertRuleFiltersValue>({});
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
 
-  function handleFiltersChange(next: AlertFiltersValue) {
-    setFilters(next);
-    setPage(1);
-  }
-
-  const { data: alerts, isLoading } = useAlerts(filters);
-  const { data: summary } = useAlertSummary();
-  const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);
+  const { data: rules, isLoading } = useAlertRules(filters);
+  const { data: stats } = useAlertStats();
   const setCreateAlertModalOpen = useUIStore((s) => s.setCreateAlertModalOpen);
+  const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);
   const queryClient = useQueryClient();
-
-  const pageItems = (alerts ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function handleViewCamera(cameraId: string) {
     setSelectedCameraId(cameraId);
@@ -52,7 +33,7 @@ function AlertsPageContent() {
     <div className="space-y-4 p-4 sm:p-6">
       <PageHeader
         title="Alerts Management"
-        description="Monitor, triage and resolve security alerts in real-time."
+        description="Draw a zone on a camera's snapshot — an alert fires when a person's bounding box matches your trigger condition."
         actions={
           <Button
             className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90"
@@ -63,40 +44,25 @@ function AlertsPageContent() {
         }
       />
 
-      {summary && (
-        <AlertFilters
-          filters={filters}
-          onChange={handleFiltersChange}
-          tabCounts={summary.tabCounts}
-          severityCounts={summary.severityCounts}
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["alerts"] })}
-        />
-      )}
+      <AlertRuleFilters
+        filters={filters}
+        onChange={setFilters}
+        stats={stats}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ["alert-rules"] })}
+      />
 
-      <AlertsTable
-        alerts={pageItems}
+      <AlertRulesTable
+        rules={rules ?? []}
         isLoading={isLoading}
-        onSelectAlert={setSelectedAlertId}
+        onSelectRule={setSelectedAlertId}
         onViewCamera={handleViewCamera}
       />
 
-      {alerts && alerts.length > 0 && (
-        <PaginationBar page={page} pageSize={PAGE_SIZE} total={alerts.length} onPageChange={setPage} />
-      )}
-
-      <AlertDetailPanel
+      <AlertRuleDetailPanel
         alertId={selectedAlertId}
         open={Boolean(selectedAlertId)}
         onOpenChange={(open) => !open && setSelectedAlertId(null)}
       />
     </div>
-  );
-}
-
-export default function AlertsPage() {
-  return (
-    <Suspense fallback={null}>
-      <AlertsPageContent />
-    </Suspense>
   );
 }

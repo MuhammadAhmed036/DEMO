@@ -92,10 +92,6 @@ export const ALERTS: Alert[] = buildAlerts();
 
 export const ALERT_FEED_COUNT = 36;
 
-export function getAlertById(id: string): Alert | undefined {
-  return ALERTS.find((a) => a.id === id);
-}
-
 export function getLiveAlertFeed(): Alert[] {
   return ALERTS.filter((a) => a.status !== "resolved" && a.status !== "closed");
 }

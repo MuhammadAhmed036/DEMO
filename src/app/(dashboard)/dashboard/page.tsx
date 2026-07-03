@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, ShieldAlert, Users, Video, VideoOff, Wifi } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MetricTrendCard } from "@/components/dashboard/MetricTrendCard";
-import { LiveAlertsPanel } from "@/components/dashboard/LiveAlertsPanel";
+import { LiveAlertRulesPanel } from "@/components/dashboard/LiveAlertRulesPanel";
 import { CameraLocationMapLoader } from "@/components/map/CameraLocationMapLoader";
 import { CameraLiveInfoPanel } from "@/components/map/CameraLiveInfoPanel";
 import { Button } from "@/components/ui/button";
 import { useDashboardStats, useTrend } from "@/lib/hooks/useDashboardStats";
 import { useCameras } from "@/lib/hooks/useCameras";
 import { useCameraLocations, useUpdateCameraLocation } from "@/lib/hooks/useCameraLocations";
+import { useAlertStats } from "@/lib/hooks/useAlertRules";
 import { useZones } from "@/lib/hooks/useZones";
 import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const { data: zones } = useZones();
   const { data: cameraLocations } = useCameraLocations();
   const updateLocation = useUpdateCameraLocation();
+  const { data: alertStats } = useAlertStats();
   const { data: alertTrend } = useTrend("active-alert-trend");
   const { data: offlineTrend } = useTrend("offline-cameras-trend");
   const { data: personTrend } = useTrend("person-count-trend");
@@ -118,18 +120,18 @@ export default function DashboardPage() {
         <StatCard
           icon={AlertTriangle}
           iconClassName="bg-severity-high/15 text-severity-high"
-          label="Active Alerts"
-          value={stats ? formatNumber(stats.activeAlerts) : "—"}
+          label="Active Alert Rules"
+          value={alertStats ? formatNumber(alertStats.byStatus.active ?? 0) : "—"}
           href="/alerts"
           hrefLabel="View alerts"
         />
         <StatCard
           icon={ShieldAlert}
           iconClassName="bg-severity-critical/15 text-severity-critical"
-          label="Critical Alerts"
-          value={stats ? formatNumber(stats.criticalAlerts) : "—"}
-          href="/alerts?severity=critical"
-          hrefLabel="View critical"
+          label="Unseen Alert Matches"
+          value={alertStats ? formatNumber(alertStats.unseen) : "—"}
+          href="/alerts"
+          hrefLabel="View alerts"
         />
       </div>
 
@@ -156,7 +158,7 @@ export default function DashboardPage() {
               }}
             />
           ) : panelMode === "alerts" ? (
-            <LiveAlertsPanel
+            <LiveAlertRulesPanel
               onViewCamera={handleSelectCamera}
               onClose={() => setPanelMode("closed")}
             />
@@ -199,8 +201,8 @@ export default function DashboardPage() {
             label="Active Alert Trend (24H)"
             badge="+12%"
             badgeTone="negative"
-            value={stats?.activeAlerts ?? "—"}
-            valueSuffix="Alerts"
+            value={alertStats?.total ?? "—"}
+            valueSuffix="Rules"
             chartData={alertTrend}
             chartColor="#f97316"
           />

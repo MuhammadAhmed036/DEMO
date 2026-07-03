@@ -68,6 +68,37 @@ export async function updateCameraLocation(
   return normalizeCameraLocation(await response.json());
 }
 
+export interface CameraSnapshot {
+  eventId: string;
+  imageWidth: number;
+  imageHeight: number;
+  detectionTs: string | null;
+}
+
+export async function fetchLatestCameraSnapshot(cameraId: string): Promise<CameraSnapshot | null> {
+  const response = await fetch(
+    `/api/ai/v2/cameras/${encodeURIComponent(cameraId)}/events?limit=1`,
+    { cache: "no-store" }
+  );
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, `Camera events API returned ${response.status}`));
+  }
+  const payload = asRecord(await response.json());
+  const rows = Array.isArray(payload.events) ? payload.events : [];
+  const latest = asRecord(rows[0]);
+  const eventId = asString(latest.event_id);
+  const imageWidth = asNumber(latest.image_width);
+  const imageHeight = asNumber(latest.image_height);
+  if (!eventId || !imageWidth || !imageHeight) return null;
+
+  return {
+    eventId,
+    imageWidth,
+    imageHeight,
+    detectionTs: asString(latest.detection_ts),
+  };
+}
+
 export async function fetchZoneSummaries(): Promise<ZoneSummary[]> {
   const response = await fetch("/api/ai/v2/zones", { cache: "no-store" });
   if (!response.ok) {

@@ -2,68 +2,60 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
-import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
-import { AlertFeedCard } from "@/components/dashboard/AlertFeedCard";
+import { useAlertRules, useAlertStats } from "@/lib/hooks/useAlertRules";
+import { AlertRuleFeedCard } from "@/components/dashboard/AlertRuleFeedCard";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { SEVERITY_LABEL, SEVERITY_ORDER } from "@/lib/mock/alert-types";
-import type { AlertSeverity } from "@/lib/types";
+import type { AlertRuleStatus } from "@/lib/types";
 
 const PAGE_SIZE = 10;
 
-const SEVERITY_DOT: Record<AlertSeverity, string> = {
-  critical: "bg-severity-critical",
-  high: "bg-severity-high",
-  medium: "bg-severity-medium",
-  low: "bg-severity-low",
-};
+const STATUS_TABS: { value: AlertRuleStatus | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "resolved", label: "Resolved" },
+  { value: "muted", label: "Muted" },
+];
 
-export function LiveAlertsPanel({
+export function LiveAlertRulesPanel({
   onViewCamera,
   onClose,
 }: {
   onViewCamera: (cameraId: string) => void;
   onClose?: () => void;
 }) {
-  const { data: alerts, isLoading } = useLiveAlertFeed();
-  const [severityFilter, setSeverityFilter] = useState<AlertSeverity | "all">("all");
+  const { data: rules, isLoading } = useAlertRules();
+  const { data: stats } = useAlertStats();
+  const [statusFilter, setStatusFilter] = useState<AlertRuleStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    let list = alerts ?? [];
-    if (severityFilter !== "all") list = list.filter((a) => a.severity === severityFilter);
+    let list = rules ?? [];
+    if (statusFilter !== "all") list = list.filter((r) => r.status === statusFilter);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
-        (a) =>
-          a.title.toLowerCase().includes(q) ||
-          a.cameraName.toLowerCase().includes(q) ||
-          a.zoneName.toLowerCase().includes(q)
+        (r) =>
+          (r.name ?? "").toLowerCase().includes(q) ||
+          r.cameraId.toLowerCase().includes(q) ||
+          (r.zone ?? "").toLowerCase().includes(q)
       );
     }
     return list;
-  }, [alerts, severityFilter, search]);
+  }, [rules, statusFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: alerts?.length ?? 0 };
-    SEVERITY_ORDER.forEach((s) => {
-      c[s] = (alerts ?? []).filter((a) => a.severity === s).length;
-    });
-    return c;
-  }, [alerts]);
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-surface-border p-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">Live Alerts</h3>
+          <h3 className="text-sm font-semibold">Live Alert Rules</h3>
           <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">
-            {counts.all}
+            {stats?.unseen ?? 0}
           </span>
         </div>
         {onClose && (
@@ -82,41 +74,26 @@ export function LiveAlertsPanel({
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Search alerts..."
+            placeholder="Search alert rules..."
             className="h-8 pl-8 text-xs"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => {
-              setSeverityFilter("all");
-              setPage(1);
-            }}
-            className={cn(
-              "rounded-full border px-2.5 py-1 text-[11px] font-medium",
-              severityFilter === "all"
-                ? "border-primary bg-primary/15 text-primary"
-                : "border-surface-border text-muted-foreground hover:bg-surface-3"
-            )}
-          >
-            All {counts.all}
-          </button>
-          {SEVERITY_ORDER.map((s) => (
+          {STATUS_TABS.map((tab) => (
             <button
-              key={s}
+              key={tab.value}
               onClick={() => {
-                setSeverityFilter(s);
+                setStatusFilter(tab.value);
                 setPage(1);
               }}
               className={cn(
-                "flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                severityFilter === s
+                "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+                statusFilter === tab.value
                   ? "border-primary bg-primary/15 text-primary"
                   : "border-surface-border text-muted-foreground hover:bg-surface-3"
               )}
             >
-              <span className={cn("size-1.5 rounded-full", SEVERITY_DOT[s])} />
-              {SEVERITY_LABEL[s]} {counts[s]}
+              {tab.label} {tab.value === "all" ? (stats?.total ?? "") : (stats?.byStatus[tab.value] ?? "")}
             </button>
           ))}
         </div>
@@ -126,10 +103,12 @@ export function LiveAlertsPanel({
         {isLoading &&
           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
         {!isLoading && pageItems.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">No alerts match your filters.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No alert rules match your filters. Create one from a camera or the Alerts page.
+          </p>
         )}
-        {pageItems.map((alert) => (
-          <AlertFeedCard key={alert.id} alert={alert} onViewCamera={onViewCamera} />
+        {pageItems.map((rule) => (
+          <AlertRuleFeedCard key={rule.alertId} rule={rule} onViewCamera={onViewCamera} />
         ))}
       </div>
 
