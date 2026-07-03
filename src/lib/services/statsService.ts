@@ -21,11 +21,48 @@ function numeric(record: UnknownRecord, keys: string[], fallback = 0): number {
   return fallback;
 }
 
-export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const response = await fetch("/api/ai/stats", { cache: "no-store" });
-  if (!response.ok) throw new Error(`Stats API returned ${response.status}`);
-
+/**
+ * There's no single "total persons detected" aggregate endpoint in the
+ * detection API. `/api/v2/events` returns a `total` row count in its
+ * response envelope even with `limit=1`, so a date-ranged query gets an
+ * accurate count for a day without paginating through every event.
+ * This counts detection *events*, not summed `detection_count` (which would
+ * require fetching every matching row — too expensive to poll repeatedly).
+ */
+async function fetchEventCountInRange(dateFrom: string, dateTo: string): Promise<number> {
+  const params = new URLSearchParams({ limit: "1", date_from: dateFrom, date_to: dateTo });
+  const response = await fetch(`/api/ai/v2/events?${params.toString()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Events API returned ${response.status}`);
   const payload = asRecord(await response.json());
+  return numeric(payload, ["total"]);
+}
+
+async function fetchPersonsTodaySummary(): Promise<{ total: number; trendPercent: number }> {
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+  const [todayCount, yesterdayCount] = await Promise.all([
+    fetchEventCountInRange(todayStart.toISOString(), now.toISOString()),
+    fetchEventCountInRange(yesterdayStart.toISOString(), todayStart.toISOString()),
+  ]);
+
+  const trendPercent =
+    yesterdayCount > 0 ? Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 1000) / 10 : 0;
+
+  return { total: todayCount, trendPercent };
+}
+
+export async function fetchDashboardStats(): Promise<DashboardStats> {
+  const [statsResponse, personsToday] = await Promise.all([
+    fetch("/api/ai/stats", { cache: "no-store" }),
+    fetchPersonsTodaySummary(),
+  ]);
+  if (!statsResponse.ok) throw new Error(`Stats API returned ${statsResponse.status}`);
+
+  const payload = asRecord(await statsResponse.json());
   const stats = asRecord(payload.data ?? payload.stats ?? payload);
   const totalCameras = numeric(stats, ["totalCameras", "total_cameras", "camera_count"]);
   const activeCameras = numeric(stats, [
@@ -42,17 +79,8 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       ["offlineCameras", "offline_cameras"],
       Math.max(0, totalCameras - activeCameras)
     ),
-    totalPersonsToday: numeric(stats, [
-      "totalPersonsToday",
-      "total_persons_today",
-      "persons_today",
-      "people_count",
-    ]),
-    personsTrendPercent: numeric(stats, [
-      "personsTrendPercent",
-      "persons_trend_percent",
-      "people_trend_percent",
-    ]),
+    totalPersonsToday: personsToday.total,
+    personsTrendPercent: personsToday.trendPercent,
     activeAlerts: numeric(stats, ["activeAlerts", "active_alerts", "alert_count"]),
     criticalAlerts: numeric(stats, ["criticalAlerts", "critical_alerts"]),
     offlineCamerasTrendPercent: numeric(stats, [

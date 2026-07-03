@@ -1,7 +1,5 @@
 import type { Zone } from "@/lib/types";
 import { ZONES, getZoneById } from "@/lib/mock/zones";
-import { buildZoneBlobsGeoJSON } from "@/lib/mock/zones-geo";
-import type { FeatureCollection, Polygon } from "geojson";
 
 const LATENCY_MS = 180;
 
@@ -15,8 +13,4 @@ export async function fetchZones(): Promise<Zone[]> {
 
 export async function fetchZoneById(id: string): Promise<Zone | undefined> {
   return delay(getZoneById(id));
-}
-
-export async function fetchZoneBlobsGeoJSON(): Promise<FeatureCollection<Polygon>> {
-  return delay(buildZoneBlobsGeoJSON());
 }

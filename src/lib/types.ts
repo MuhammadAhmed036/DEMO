@@ -121,6 +121,31 @@ export interface EventHistoryItem {
   confidence: number;
 }
 
+export interface CameraLocation {
+  id: number;
+  cameraId: string;
+  cameraName: string;
+  cameraIp: string | null;
+  zone: string | null;
+  scene: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  headingDegrees: number | null;
+  address: string | null;
+  building: string | null;
+  floor: string | null;
+  description: string | null;
+  enabled: boolean;
+  updatedAt: string | null;
+}
+
+export interface ZoneSummary {
+  zone: string;
+  cameraCount: number;
+  withCoords: number;
+  enabledCount: number;
+}
+
 export type GridLayoutKey = "1x1" | "2x2" | "3x3" | "4x4" | "5x5";
 
 export interface MediaWallAssignment {

@@ -1,86 +1,91 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { MapCanvasLoader } from "@/components/map/MapCanvasLoader";
-import type { FlyToTarget } from "@/components/map/MapCanvas";
-import { CameraInfoPanel } from "@/components/map/CameraInfoPanel";
-import { ZoneLegendPanel } from "@/components/map/ZoneLegendPanel";
-import { useCameras } from "@/lib/hooks/useCameras";
-import { useZoneBlobs, useZones } from "@/lib/hooks/useZones";
-import type { Zone } from "@/lib/types";
+import { CameraLocationMapLoader } from "@/components/map/CameraLocationMapLoader";
+import { CameraLocationPanel } from "@/components/map/CameraLocationPanel";
+import {
+  useCameraLocations,
+  useUpdateCameraLocation,
+  useZoneSummaries,
+} from "@/lib/hooks/useCameraLocations";
 
-function MapViewContent() {
-  const searchParams = useSearchParams();
-  const requestedZoneId = searchParams.get("zone");
-
-  const { data: cameras } = useCameras();
-  const { data: zones } = useZones();
-  const { data: zoneBlobs } = useZoneBlobs();
+export default function MapViewPage() {
+  const { data: cameras, isLoading, error } = useCameraLocations();
+  const { data: zoneSummaries } = useZoneSummaries();
+  const updateLocation = useUpdateCameraLocation();
 
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
-  const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
-  const [flyToTarget, setFlyToTarget] = useState<FlyToTarget | null>(null);
-  const appliedZoneParam = useRef(false);
+  const [placementCameraId, setPlacementCameraId] = useState<string | null>(null);
+  const [flyToTarget, setFlyToTarget] = useState<{ center: [number, number]; zoom: number } | null>(
+    null
+  );
 
-  function handleSelectZone(zone: Zone) {
-    setActiveZoneId(zone.id);
-    setSelectedCameraId(null);
-    setFlyToTarget({ center: zone.center, zoom: 13.2 });
-  }
+  const selectedCamera = useMemo(
+    () => cameras?.find((c) => c.cameraId === selectedCameraId) ?? null,
+    [cameras, selectedCameraId]
+  );
 
-  function handleSelectCamera(id: string) {
-    setSelectedCameraId(id);
-  }
-
-  useEffect(() => {
-    if (appliedZoneParam.current || !requestedZoneId || !zones) return;
-    const zone = zones.find((z) => z.id === requestedZoneId);
-    if (zone) {
-      appliedZoneParam.current = true;
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time deep link from ?zone= query param on initial load.
-      handleSelectZone(zone);
+  function handleSelectCamera(cameraId: string) {
+    setSelectedCameraId(cameraId);
+    setPlacementCameraId(null);
+    const camera = cameras?.find((c) => c.cameraId === cameraId);
+    if (camera?.latitude !== null && camera?.longitude !== null && camera) {
+      setFlyToTarget({ center: [camera.longitude as number, camera.latitude as number], zoom: 17 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedZoneId, zones]);
+  }
+
+  function persistLocation(cameraId: string, latitude: number, longitude: number) {
+    updateLocation.mutate({ cameraId, latitude, longitude });
+    setPlacementCameraId(null);
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem-2.25rem)] flex-col">
-      <PageHeader title="Map View" description="Real-time geospatial view of all cameras and zones" />
+      <PageHeader
+        title="Map View"
+        description="Live camera locations from the detection API — drag a marker, click Pick on map, or type coordinates to relocate a camera"
+      />
+      {error && (
+        <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive sm:mx-6">
+          {error.message}
+        </div>
+      )}
       <div className="grid flex-1 gap-4 p-4 sm:p-6 lg:grid-cols-[1fr_340px]">
         <div className="h-[480px] overflow-hidden rounded-xl border border-surface-border lg:h-full">
-          <MapCanvasLoader
+          <CameraLocationMapLoader
             cameras={cameras ?? []}
-            zones={zones ?? []}
-            zoneBlobs={zoneBlobs}
             selectedCameraId={selectedCameraId}
             onSelectCamera={handleSelectCamera}
+            onDragEnd={persistLocation}
+            placementCameraId={placementCameraId}
+            onPickLocation={(latitude, longitude) => {
+              if (placementCameraId) persistLocation(placementCameraId, latitude, longitude);
+            }}
             flyToTarget={flyToTarget}
-            initialZoom={10.6}
           />
         </div>
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border lg:h-full">
-          {selectedCameraId ? (
-            <CameraInfoPanel cameraId={selectedCameraId} onClose={() => setSelectedCameraId(null)} />
-          ) : (
-            <ZoneLegendPanel
-              zones={zones ?? []}
-              cameras={cameras ?? []}
-              activeZoneId={activeZoneId}
-              onSelectZone={handleSelectZone}
-            />
-          )}
+          <CameraLocationPanel
+            zoneSummaries={zoneSummaries ?? []}
+            cameras={cameras ?? []}
+            selectedCamera={selectedCamera}
+            placementCameraId={placementCameraId}
+            onArmPlacement={setPlacementCameraId}
+            onCancelPlacement={() => setPlacementCameraId(null)}
+            onSave={persistLocation}
+            onClose={() => setSelectedCameraId(null)}
+            onSelectCamera={handleSelectCamera}
+            isSaving={updateLocation.isPending}
+            saveError={updateLocation.error?.message ?? null}
+          />
         </div>
       </div>
+      {isLoading && !cameras && (
+        <div className="px-4 pb-4 text-xs text-muted-foreground sm:px-6">
+          Loading camera registry…
+        </div>
+      )}
     </div>
-  );
-}
-
-export default function MapViewPage() {
-  return (
-    <Suspense fallback={null}>
-      <MapViewContent />
-    </Suspense>
   );
 }

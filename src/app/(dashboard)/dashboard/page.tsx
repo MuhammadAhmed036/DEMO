@@ -5,12 +5,13 @@ import { AlertTriangle, ShieldAlert, Users, Video, VideoOff, Wifi } from "lucide
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MetricTrendCard } from "@/components/dashboard/MetricTrendCard";
 import { LiveAlertsPanel } from "@/components/dashboard/LiveAlertsPanel";
-import { MapCanvasLoader } from "@/components/map/MapCanvasLoader";
-import { CameraInfoPanel } from "@/components/map/CameraInfoPanel";
+import { CameraLocationMapLoader } from "@/components/map/CameraLocationMapLoader";
+import { CameraLiveInfoPanel } from "@/components/map/CameraLiveInfoPanel";
 import { Button } from "@/components/ui/button";
 import { useDashboardStats, useTrend } from "@/lib/hooks/useDashboardStats";
 import { useCameras } from "@/lib/hooks/useCameras";
-import { useZoneBlobs, useZones } from "@/lib/hooks/useZones";
+import { useCameraLocations, useUpdateCameraLocation } from "@/lib/hooks/useCameraLocations";
+import { useZones } from "@/lib/hooks/useZones";
 import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 
 type PanelMode = "alerts" | "camera" | "closed";
@@ -19,14 +20,20 @@ export default function DashboardPage() {
   const { data: stats } = useDashboardStats();
   const { data: cameras } = useCameras();
   const { data: zones } = useZones();
-  const { data: zoneBlobs } = useZoneBlobs();
+  const { data: cameraLocations } = useCameraLocations();
+  const updateLocation = useUpdateCameraLocation();
   const { data: alertTrend } = useTrend("active-alert-trend");
   const { data: offlineTrend } = useTrend("offline-cameras-trend");
   const { data: personTrend } = useTrend("person-count-trend");
 
-  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
+  const [selectedLocationCameraId, setSelectedLocationCameraId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>("alerts");
   const activeCameraCount = cameras?.filter((camera) => camera.status === "online").length;
+
+  const selectedCameraLocation = useMemo(
+    () => cameraLocations?.find((c) => c.cameraId === selectedLocationCameraId) ?? null,
+    [cameraLocations, selectedLocationCameraId]
+  );
 
   const peakZone = useMemo(() => {
     if (!cameras || !zones) return null;
@@ -51,9 +58,13 @@ export default function DashboardPage() {
       .sort((a, b) => b.densityPercent - a.densityPercent)[0];
   }, [cameras]);
 
-  function handleSelectCamera(id: string) {
-    setSelectedCameraId(id);
+  function handleSelectCamera(cameraId: string) {
+    setSelectedLocationCameraId(cameraId);
     setPanelMode("camera");
+  }
+
+  function persistCameraLocation(cameraId: string, latitude: number, longitude: number) {
+    updateLocation.mutate({ cameraId, latitude, longitude });
   }
 
   return (
@@ -124,21 +135,23 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
-          <MapCanvasLoader
-            cameras={cameras ?? []}
-            zones={zones ?? []}
-            zoneBlobs={zoneBlobs}
-            selectedCameraId={selectedCameraId}
+          <CameraLocationMapLoader
+            cameras={cameraLocations ?? []}
+            selectedCameraId={selectedLocationCameraId}
             onSelectCamera={handleSelectCamera}
+            onDragEnd={persistCameraLocation}
+            placementCameraId={null}
+            onPickLocation={() => {}}
           />
         </div>
 
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
-          {panelMode === "camera" && selectedCameraId ? (
-            <CameraInfoPanel
-              cameraId={selectedCameraId}
+          {panelMode === "camera" && selectedCameraLocation ? (
+            <CameraLiveInfoPanel
+              key={selectedCameraLocation.cameraId}
+              camera={selectedCameraLocation}
               onClose={() => {
-                setSelectedCameraId(null);
+                setSelectedLocationCameraId(null);
                 setPanelMode("alerts");
               }}
             />
