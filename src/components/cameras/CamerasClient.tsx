@@ -23,7 +23,9 @@ export function CamerasClient() {
   const { data: cameras, isLoading, error, mutate } = useCameras();
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Default to only online cameras — offline/broken ones are still one
+  // dropdown selection away via "All Statuses" or "Offline".
+  const [statusFilter, setStatusFilter] = useState("online");
   const [page, setPage] = useState(1);
 
   const zones = useMemo(() => {

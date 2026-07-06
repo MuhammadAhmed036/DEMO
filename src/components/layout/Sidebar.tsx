@@ -2,17 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/lib/nav";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 function NavLink({
   href,
@@ -75,7 +69,7 @@ export function Sidebar() {
         </div>
         {!sidebarCollapsed && (
           <div className="leading-tight">
-            <div className="text-sm font-semibold text-foreground">SafeCity AI</div>
+            <div className="text-sm font-semibold text-foreground">Intellivision</div>
             <div className="text-xs text-muted-foreground">Command Center</div>
           </div>
         )}
@@ -95,42 +89,6 @@ export function Sidebar() {
           />
         ))}
       </nav>
-
-      <div className="border-t border-sidebar-border p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-sidebar-accent",
-                sidebarCollapsed && "justify-center"
-              )}
-            >
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-3 text-xs font-semibold">
-                CR
-              </div>
-              {!sidebarCollapsed && (
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs text-muted-foreground">Operator</div>
-                  <div className="truncate text-sm font-medium">Control Room 1</div>
-                </div>
-              )}
-              {!sidebarCollapsed && <ChevronDown className="size-4 text-muted-foreground" />}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-48">
-            <DropdownMenuItem disabled className="flex items-center gap-2 text-xs">
-              <span className="size-2 rounded-full bg-status-active" /> Live
-            </DropdownMenuItem>
-            <DropdownMenuItem>Switch Control Room</DropdownMenuItem>
-            <DropdownMenuItem>Sign Out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {!sidebarCollapsed && (
-          <div className="mt-1 flex items-center gap-1.5 px-2 text-xs text-status-active">
-            <span className="size-1.5 rounded-full bg-status-active" /> Live
-          </div>
-        )}
-      </div>
     </div>
   );
 

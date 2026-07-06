@@ -16,12 +16,13 @@ import { useCamera } from "@/lib/hooks/useCameras";
 import { useCameraLocation } from "@/lib/hooks/useCameraLocations";
 import { useCameraEvents } from "@/lib/hooks/useCameraDetail";
 import { useUIStore } from "@/lib/store/useUIStore";
+import { resolveDetectionCameraId } from "@/lib/streamToDetectionCameraId";
 
 export default function CameraDetailPage() {
   const params = useParams<{ id: string }>();
   const cameraId = params.id;
   const { data: camera, isLoading, error: cameraError, mutate } = useCamera(cameraId);
-  const registryCameraId = camera?.sourceName ?? cameraId;
+  const registryCameraId = resolveDetectionCameraId(camera?.sourceName ?? cameraId);
   const { data: registryCamera } = useCameraLocation(registryCameraId);
   const { data: events, isLoading: eventsLoading } = useCameraEvents(registryCameraId, 25);
   const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);

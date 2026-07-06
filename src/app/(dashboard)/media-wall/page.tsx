@@ -14,6 +14,7 @@ import { useZones } from "@/lib/hooks/useZones";
 import { useLiveAlertFeed } from "@/lib/hooks/useAlerts";
 import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
 import { useUIStore } from "@/lib/store/useUIStore";
+import { resolveDetectionCameraId } from "@/lib/streamToDetectionCameraId";
 import type { GridLayoutKey } from "@/lib/types";
 
 export default function MediaWallPage() {
@@ -67,12 +68,17 @@ export default function MediaWallPage() {
     );
     if (hasValidAssignment) return;
 
+    // Default the wall to cameras that are actually online — offline/broken
+    // ones can still be added manually from the picker panel on the right.
+    const workingCameras = cameras.filter((camera) => camera.status === "online");
+    const autoCameras = workingCameras.length > 0 ? workingCameras : cameras;
+
     clearMediaWallAssignments();
     const autoLayout: GridLayoutKey =
-      cameras.length > 9 ? "4x4" : cameras.length > 4 ? "3x3" : "2x2";
+      autoCameras.length > 9 ? "4x4" : autoCameras.length > 4 ? "3x3" : "2x2";
     setLayout(autoLayout);
     const autoCellCount = gridDimensions(autoLayout) ** 2;
-    cameras
+    autoCameras
       .slice(0, autoCellCount)
       .forEach((camera, index) => assignCameraToCell(index, camera.id));
   }, [
@@ -127,7 +133,9 @@ export default function MediaWallPage() {
               const assignment = assignments.find((a) => a.cellIndex === i);
               const camera = assignment?.cameraId ? cameraById.get(assignment.cameraId) ?? null : null;
               const livePeopleCount = camera
-                ? (livePeopleCountByName.get((camera.sourceName ?? camera.code).toLowerCase()) ?? null)
+                ? (livePeopleCountByName.get(
+                    resolveDetectionCameraId(camera.sourceName ?? camera.code).toLowerCase()
+                  ) ?? null)
                 : null;
               return (
                 <div key={i} className="min-h-[90px]">

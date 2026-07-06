@@ -7,7 +7,6 @@ import {
   Video,
   ScanLine,
   BarChart3,
-  Settings,
 } from "lucide-react";
 
 export interface NavItem {
@@ -25,5 +24,4 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/cameras", label: "Cameras", icon: Video },
   { href: "/zones", label: "Zones", icon: ScanLine },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];

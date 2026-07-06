@@ -113,7 +113,7 @@ export function buildVectorStyle(theme: MapTheme = "dark"): StyleSpecification {
 
   return {
     version: 8,
-    name: "SafeCity Islamabad Vector",
+    name: "Intellivision Islamabad Vector",
     glyphs: GLYPHS_URL,
     transition: { duration: 0, delay: 0 },
     sources: {
@@ -234,7 +234,7 @@ export function buildSatelliteStyle(): StyleSpecification {
 
   return {
     version: 8,
-    name: "SafeCity Islamabad Satellite",
+    name: "Intellivision Islamabad Satellite",
     glyphs: GLYPHS_URL,
     transition: { duration: 0, delay: 0 },
     sources: {

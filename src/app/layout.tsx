@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SafeCity AI Command Center",
+  title: "Intellivision Command Center",
   description: "Enterprise AI-powered city surveillance and alerting command center.",
 };
 

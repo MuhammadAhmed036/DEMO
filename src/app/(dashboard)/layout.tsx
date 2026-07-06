@@ -1,6 +1,5 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
-import { StatusFooter } from "@/components/layout/StatusFooter";
 import { BackendStatusBanner } from "@/components/layout/BackendStatusBanner";
 import { CreateAlertModal } from "@/components/alerts/CreateAlertModal";
 import { AlertWatcherMount } from "@/components/alerts/AlertWatcherMount";
@@ -17,7 +16,6 @@ export default function DashboardShellLayout({
         <Topbar />
         <BackendStatusBanner />
         <main className="flex-1 overflow-x-hidden">{children}</main>
-        <StatusFooter />
       </div>
       <CreateAlertModal />
       <AlertWatcherMount />
