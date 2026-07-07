@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { useAlertRules } from "@/lib/hooks/useAlertRules";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
+import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function CameraAlertRulesCard({ cameraId }: { cameraId: string }) {
@@ -33,6 +34,7 @@ export function CameraAlertRulesCard({ cameraId }: { cameraId: string }) {
             >
               <span className="min-w-0 flex-1 truncate">{rule.name ?? rule.alertId}</span>
               <span className="shrink-0 text-muted-foreground">{rule.eventCount} matches</span>
+              <AlertCategoryBadge category={rule.category} className="shrink-0" />
               <AlertRuleStatusBadge status={rule.status} className="shrink-0" />
             </Link>
           ))}

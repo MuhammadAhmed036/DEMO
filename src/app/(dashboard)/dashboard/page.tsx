@@ -18,6 +18,7 @@ import {
 import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
 import { useAlertStats, useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import { useZones } from "@/lib/hooks/useZones";
+import { ISLAMABAD_MAX_ZOOM } from "@/components/map/mapStyles";
 import { densityTierBadgeTone, densityTierColor, densityTierFromCount } from "@/lib/density";
 import { formatCompactNumber, formatNumber, formatTime } from "@/lib/formatters";
 
@@ -38,6 +39,9 @@ export default function DashboardPage() {
 
   const [selectedLocationCameraId, setSelectedLocationCameraId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>("alerts");
+  const [flyToTarget, setFlyToTarget] = useState<{ center: [number, number]; zoom: number } | null>(
+    null
+  );
   const activeCameraCount = cameras?.filter((camera) => camera.status === "online").length;
 
   const selectedCameraLocation = useMemo(
@@ -78,6 +82,13 @@ export default function DashboardPage() {
   function handleSelectCamera(cameraId: string) {
     setSelectedLocationCameraId(cameraId);
     setPanelMode("camera");
+    const camera = cameraLocations?.find((c) => c.cameraId === cameraId);
+    if (camera?.latitude !== null && camera?.longitude !== null && camera) {
+      setFlyToTarget({
+        center: [camera.longitude as number, camera.latitude as number],
+        zoom: ISLAMABAD_MAX_ZOOM,
+      });
+    }
   }
 
   function persistCameraLocation(cameraId: string, latitude: number, longitude: number) {
@@ -159,6 +170,7 @@ export default function DashboardPage() {
             onDragEnd={persistCameraLocation}
             placementCameraId={null}
             onPickLocation={() => {}}
+            flyToTarget={flyToTarget}
           />
         </div>
 

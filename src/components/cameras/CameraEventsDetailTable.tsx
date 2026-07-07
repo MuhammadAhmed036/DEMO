@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import type { CameraEventDetail } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
+import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
 import { formatDateTime } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
@@ -89,9 +89,8 @@ export function CameraEventsDetailTable({
                     <td colSpan={6} className="bg-surface-1 px-3 py-3">
                       <div className="flex flex-col gap-3 sm:flex-row">
                         {event.imageExists && (
-                          // eslint-disable-next-line @next/next/no-img-element -- proxied JPEG from the detection API
-                          <img
-                            src={liveEventImageUrl(event.eventId)}
+                          <DetectionFrameImage
+                            eventId={event.eventId}
                             alt={`Detection frame ${event.eventId}`}
                             className="h-32 w-48 shrink-0 rounded-md border border-surface-border object-cover"
                           />

@@ -1,10 +1,17 @@
 import type {
   AlertBoundingBox,
+  AlertCategory,
   AlertConditions,
   AlertMatchEvent,
   AlertRuleV2,
   AlertStatsSummary,
 } from "@/lib/types";
+
+const ALERT_CATEGORIES: AlertCategory[] = ["critical", "medium", "low"];
+
+function asCategory(value: unknown): AlertCategory {
+  return ALERT_CATEGORIES.includes(value as AlertCategory) ? (value as AlertCategory) : "medium";
+}
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -70,6 +77,7 @@ function normalizeAlertRule(raw: unknown): AlertRuleV2 {
     sourceEventId: asString(record.source_event_id),
     boundingBox: normalizeBoundingBox(record.bounding_box),
     conditions: normalizeConditions(record.conditions),
+    category: asCategory(metadata.category),
     refImageWidth: asNumber(metadata.ref_image_width),
     refImageHeight: asNumber(metadata.ref_image_height),
     personCountInside: asNumber(record.person_count_inside) ?? 0,
@@ -174,6 +182,7 @@ export interface CreateAlertRulePayload {
   zone?: string;
   name: string;
   label: string;
+  category: AlertCategory;
   description?: string;
   sourceEventId?: string;
   boundingBox: AlertBoundingBox;
@@ -204,6 +213,7 @@ export async function createAlertRule(payload: CreateAlertRulePayload): Promise<
       },
       status: "active",
       metadata: {
+        category: payload.category,
         ref_image_width: payload.refImageWidth,
         ref_image_height: payload.refImageHeight,
       },

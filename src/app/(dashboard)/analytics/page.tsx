@@ -7,8 +7,13 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { MiniTrendChart } from "@/components/dashboard/MiniTrendChart";
 import { CameraDensityChart } from "@/components/analytics/CameraDensityChart";
 import { AlertStatusChart } from "@/components/analytics/AlertStatusChart";
+import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCameraLocations, useAggregatePeopleCountSeries } from "@/lib/hooks/useCameraLocations";
+import {
+  useCameraLocations,
+  useAggregatePeopleCountSeries,
+  useCameraDensityLastHour,
+} from "@/lib/hooks/useCameraLocations";
 import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
 import { useAlertRules, useAlertStats, useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
@@ -27,6 +32,7 @@ export default function AnalyticsPage() {
 
   const cameraIds = useMemo(() => cameras?.map((c) => c.cameraId) ?? [], [cameras]);
   const { data: aggregateSeries, isLoading: seriesLoading } = useAggregatePeopleCountSeries(cameraIds);
+  const { data: densityLastHour, isLoading: densityLastHourLoading } = useCameraDensityLastHour(cameras);
 
   const occupancyEntries = useMemo(() => Object.values(liveOccupancy), [liveOccupancy]);
 
@@ -129,6 +135,23 @@ export default function AnalyticsPage() {
         )}
       </div>
 
+      <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
+        <h3 className="mb-1 text-sm font-medium">Camera Density — Last Hour (Peak)</h3>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Highest person count each camera reached in the last hour — answers which camera ran
+          busiest vs. quietest recently, not just right now
+        </p>
+        {densityLastHourLoading ? (
+          <Skeleton className="h-[260px] w-full" />
+        ) : densityLastHour && densityLastHour.length > 0 ? (
+          <CameraDensityChart data={densityLastHour} />
+        ) : (
+          <p className="py-16 text-center text-sm text-muted-foreground">
+            No people-count history in the last hour yet.
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-surface-border bg-surface-2 p-4">
           <h3 className="mb-3 text-sm font-medium">Alert Rules by Status</h3>
@@ -191,6 +214,7 @@ export default function AnalyticsPage() {
               >
                 <span className="min-w-0 flex-1 truncate font-medium">{rule.name ?? rule.alertId}</span>
                 <span className="shrink-0 text-muted-foreground">{rule.cameraId}</span>
+                <AlertCategoryBadge category={rule.category} className="shrink-0" />
                 <span className="shrink-0 capitalize text-muted-foreground">{rule.status}</span>
                 <span
                   className={

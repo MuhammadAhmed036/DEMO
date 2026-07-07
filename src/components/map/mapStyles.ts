@@ -2,6 +2,10 @@ import type { StyleSpecification } from "maplibre-gl";
 
 export const ISLAMABAD_CENTER: [number, number] = [73.0479, 33.7295];
 export const ISLAMABAD_DEFAULT_ZOOM = 11;
+// Shared with the click-to-select fly-to targets so "go to this camera"
+// always lands at the map's actual max zoom, not some other hardcoded value
+// that drifts out of sync with it.
+export const ISLAMABAD_MAX_ZOOM = 18;
 export const ISLAMABAD_BOUNDS: [[number, number], [number, number]] = [
   [72.7, 33.45],
   [73.4, 33.95],

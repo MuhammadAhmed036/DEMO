@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { appendAlertEvent, fetchAlertRules } from "@/lib/services/alertRulesService";
-import { wsBaseUrl } from "@/lib/wsBaseUrl";
+import { subscribeToAllCamerasFeed } from "@/lib/allCamerasFeed";
 import type { AlertRuleV2 } from "@/lib/types";
 
 const COOLDOWN_MS = 15_000;
@@ -80,13 +80,6 @@ export function useAlertWatcher() {
   }, []);
 
   useEffect(() => {
-    const base = wsBaseUrl();
-    if (!base) return;
-
-    let socket: WebSocket | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let cancelled = false;
-
     async function handleDetectionEvent(cameraId: string, eventId: string) {
       const dueRules = rulesRef.current.filter((rule) => {
         if (rule.cameraId !== cameraId) return false;
@@ -152,40 +145,12 @@ export function useAlertWatcher() {
       }
     }
 
-    function connect() {
-      socket = new WebSocket(`${base}/ws/v2/people-count/all?bucket=1m&mode=latest`);
-
-      socket.onmessage = (event) => {
-        if (cancelled) return;
-        let data: UnknownRecord;
-        try {
-          data = asRecord(JSON.parse(event.data));
-        } catch {
-          return;
-        }
-        if (data.type !== "people_count") return;
-        const cameraId = String(data.camera_id ?? "");
-        const eventId = String(data.event_id ?? "");
-        if (!cameraId || !eventId) return;
-        void handleDetectionEvent(cameraId, eventId);
-      };
-
-      socket.onclose = () => {
-        if (cancelled) return;
-        reconnectTimer = setTimeout(connect, 5000);
-      };
-
-      socket.onerror = () => {
-        socket?.close();
-      };
-    }
-
-    connect();
-
-    return () => {
-      cancelled = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      socket?.close();
-    };
+    return subscribeToAllCamerasFeed((data) => {
+      if (data.type !== "people_count") return;
+      const cameraId = String(data.camera_id ?? "");
+      const eventId = String(data.event_id ?? "");
+      if (!cameraId || !eventId) return;
+      void handleDetectionEvent(cameraId, eventId);
+    });
   }, []);
 }

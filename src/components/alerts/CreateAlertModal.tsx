@@ -26,9 +26,28 @@ import { useUIStore } from "@/lib/store/useUIStore";
 import { useCameraLocations, useCameraSnapshot } from "@/lib/hooks/useCameraLocations";
 import { useCreateAlertRule } from "@/lib/hooks/useAlertRules";
 import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
-import type { AlertBoundingBox } from "@/lib/types";
+import type { AlertBoundingBox, AlertCategory } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type TriggerMode = "enter" | "leave";
+
+const CATEGORY_OPTIONS: { value: AlertCategory; label: string; activeClass: string }[] = [
+  {
+    value: "critical",
+    label: "Critical",
+    activeClass: "border-severity-critical bg-severity-critical/15 text-severity-critical",
+  },
+  {
+    value: "medium",
+    label: "Medium",
+    activeClass: "border-severity-medium bg-severity-medium/15 text-severity-medium",
+  },
+  {
+    value: "low",
+    label: "Low",
+    activeClass: "border-severity-low bg-severity-low/15 text-severity-low",
+  },
+];
 
 export function CreateAlertModal() {
   const isOpen = useUIStore((s) => s.isCreateAlertModalOpen);
@@ -40,6 +59,7 @@ export function CreateAlertModal() {
 
   const [cameraId, setCameraId] = useState("");
   const [name, setName] = useState("");
+  const [category, setCategory] = useState<AlertCategory | "">("");
   const [triggerMode, setTriggerMode] = useState<TriggerMode>("enter");
   const [box, setBox] = useState<AlertBoundingBox | null>(null);
 
@@ -59,22 +79,24 @@ export function CreateAlertModal() {
   }, [isOpen, prefilledCameraId, cameras]);
 
   const selectedCamera = cameras?.find((c) => c.cameraId === cameraId) ?? null;
-  const canSave = Boolean(cameraId && name.trim() && box && snapshot);
+  const canSave = Boolean(cameraId && name.trim() && category && box && snapshot);
 
   function resetForm() {
     setCameraId("");
     setName("");
+    setCategory("");
     setTriggerMode("enter");
     setBox(null);
   }
 
   async function handleSave() {
-    if (!snapshot || !box) return;
+    if (!snapshot || !box || !category) return;
     await createRule.mutateAsync({
       cameraId,
       zone: selectedCamera?.zone ?? undefined,
       name: name.trim(),
       label: "person",
+      category,
       sourceEventId: snapshot.eventId,
       boundingBox: box,
       triggerInside: triggerMode === "enter",
@@ -180,6 +202,30 @@ export function CreateAlertModal() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>
+            Alert Category <span className="text-destructive">*</span>
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setCategory(option.value)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  category === option.value
+                    ? option.activeClass
+                    : "border-surface-border text-muted-foreground hover:bg-surface-3"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">Required — choose how severe this alert is.</p>
         </div>
 
         <p className="rounded-lg border border-surface-border bg-surface-2 p-3 text-xs text-muted-foreground">

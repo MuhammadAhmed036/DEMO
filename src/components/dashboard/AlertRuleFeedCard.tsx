@@ -3,8 +3,9 @@
 import { Eye } from "lucide-react";
 import type { AlertRuleV2 } from "@/lib/types";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
+import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
+import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
 import { Button } from "@/components/ui/button";
-import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
 import { useMarkAlertSeen, useUpdateAlertRuleStatus } from "@/lib/hooks/useAlertRules";
 import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
 import { effectiveUnseenCount } from "@/lib/alertUnseen";
@@ -27,9 +28,9 @@ export function AlertRuleFeedCard({
       <div className="flex gap-3">
         <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-black">
           {rule.latestEventId ? (
-            // eslint-disable-next-line @next/next/no-img-element -- proxied JPEG thumbnail from the detection API
-            <img
-              src={liveEventImageUrl(rule.latestEventId)}
+            <DetectionFrameImage
+              key={rule.latestEventId}
+              eventId={rule.latestEventId}
               alt="Latest matched frame"
               className="h-full w-full object-cover"
             />
@@ -41,7 +42,10 @@ export function AlertRuleFeedCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <AlertRuleStatusBadge status={rule.status} />
+            <div className="flex items-center gap-1.5">
+              <AlertCategoryBadge category={rule.category} />
+              <AlertRuleStatusBadge status={rule.status} />
+            </div>
             {rule.updatedAt && (
               <span className="shrink-0 text-[11px] text-muted-foreground">
                 {formatTime(rule.updatedAt)}

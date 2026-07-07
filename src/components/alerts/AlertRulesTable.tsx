@@ -3,6 +3,7 @@
 import { MoreVertical } from "lucide-react";
 import type { AlertRuleV2 } from "@/lib/types";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
+import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -60,6 +61,7 @@ export function AlertRulesTable({
         <thead className="border-b border-surface-border bg-surface-2 text-xs text-muted-foreground">
           <tr>
             <th className="px-4 py-3 font-medium">Rule</th>
+            <th className="px-3 py-3 font-medium">Category</th>
             <th className="px-3 py-3 font-medium">Status</th>
             <th className="px-3 py-3 font-medium">Camera</th>
             <th className="px-3 py-3 font-medium">Zone</th>
@@ -83,6 +85,9 @@ export function AlertRulesTable({
                   {rule.label ?? "person"} ·{" "}
                   {rule.conditions?.triggerInside ? "enters zone" : "outside zone"}
                 </div>
+              </td>
+              <td className="px-3 py-3">
+                <AlertCategoryBadge category={rule.category} />
               </td>
               <td className="px-3 py-3">
                 <AlertRuleStatusBadge status={rule.status} />

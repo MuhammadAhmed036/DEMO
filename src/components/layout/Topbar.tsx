@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Menu, Moon, Sun } from "lucide-react";
 import { useUIStore } from "@/lib/store/useUIStore";
@@ -11,10 +11,15 @@ type Theme = "dark" | "light";
 export function Topbar() {
   const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen);
   const alertCount = useUnseenAlertMatchCount();
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
-    return document.documentElement.classList.contains("dark") ? "dark" : "light";
-  });
+  // Starts as "dark" to match the server-rendered `<html class="dark …">`
+  // default (see app/layout.tsx) — reading the real, possibly-"light" DOM
+  // class here during the initial render would make this component's first
+  // client render disagree with what the server sent, triggering a
+  // hydration mismatch. The effect below corrects it once mounted.
+  const [theme, setTheme] = useState<Theme>("dark");
+  useEffect(() => {
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+  }, []);
 
   const toggleTheme = () => {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";

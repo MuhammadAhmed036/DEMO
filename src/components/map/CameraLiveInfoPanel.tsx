@@ -2,7 +2,8 @@
 
 import { X } from "lucide-react";
 import type { CameraLocation } from "@/lib/types";
-import { liveEventImageUrl, useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
+import { useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
+import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
 import { zoneColor } from "@/components/map/CameraLocationMap";
 import { cn } from "@/lib/utils";
 
@@ -28,9 +29,9 @@ export function CameraLiveInfoPanel({
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="relative aspect-video w-full shrink-0 bg-black">
         {feed.latestEventId ? (
-          // eslint-disable-next-line @next/next/no-img-element -- live JPEG proxied from the detection API, not a Next-optimizable static asset
-          <img
-            src={liveEventImageUrl(feed.latestEventId)}
+          <DetectionFrameImage
+            key={feed.latestEventId}
+            eventId={feed.latestEventId}
             alt={`${displayName} — latest frame`}
             className="h-full w-full object-contain"
           />

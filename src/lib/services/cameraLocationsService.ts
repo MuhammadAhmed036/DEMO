@@ -34,6 +34,7 @@ function normalizeCameraLocation(raw: unknown): CameraLocation {
     enabled: Boolean(record.enabled),
     createdAt: asString(record.created_at),
     updatedAt: asString(record.updated_at),
+    isRegistered: true,
   };
 }
 
@@ -171,6 +172,67 @@ export async function fetchAggregatePeopleCountSeries(
   return Array.from(totalsByTime.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([time, peopleCount]) => ({ time, peopleCount, eventCount: 0 }));
+}
+
+export interface CreateCameraLocationPayload {
+  cameraId: string;
+  cameraName?: string;
+  zone?: string | null;
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Registers a camera that's known from the live-stream feed but has never
+ * sent any `detection_events` yet, so `POST /api/v2/cameras/sync` (which
+ * only upserts from existing detection data) can't discover it. This calls
+ * the direct create endpoint instead, so a camera can be placed on the map
+ * before it ever produces a detection.
+ */
+export async function createCameraLocation(
+  payload: CreateCameraLocationPayload
+): Promise<CameraLocation> {
+  const response = await fetch("/api/ai/v2/cameras", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      camera_id: payload.cameraId,
+      camera_name: payload.cameraName ?? payload.cameraId,
+      zone: payload.zone ?? undefined,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, `Failed to create camera (${response.status})`));
+  }
+  return normalizeCameraLocation(await response.json());
+}
+
+export interface CameraSyncResult {
+  added: number;
+  before: number;
+  after: number;
+}
+
+/**
+ * Upserts cameras seen in `detection_events` into the `camera_locations`
+ * registry (backend: `POST /api/v2/cameras/sync`). New cameras that start
+ * sending detections show up live everywhere else immediately, but only
+ * appear in registry-backed UI (Alert creation, Map View) once synced —
+ * this never overwrites existing coordinates, names, or addresses.
+ */
+export async function syncCameras(): Promise<CameraSyncResult> {
+  const response = await fetch("/api/ai/v2/cameras/sync", { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, `Camera sync failed (${response.status})`));
+  }
+  const payload = asRecord(await response.json());
+  return {
+    added: Number(payload.added) || 0,
+    before: Number(payload.before) || 0,
+    after: Number(payload.after) || 0,
+  };
 }
 
 export async function fetchZoneSummaries(): Promise<ZoneSummary[]> {

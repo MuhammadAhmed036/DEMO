@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import type { Camera } from "@/lib/types";
 
 const pollInterval = Number(process.env.NEXT_PUBLIC_POLL_INTERVAL ?? 5000);
 const refreshInterval = Number.isFinite(pollInterval) && pollInterval > 0 ? pollInterval : 5000;
+
+// Wait a bit longer than one poll cycle before trusting an "offline" report,
+// so a transient blip has a real chance to be contradicted by the next poll.
+const OFFLINE_GRACE_MS = refreshInterval + 2000;
 
 async function cameraFetcher(url: string): Promise<Camera[]> {
   const response = await fetch(url, { cache: "no-store" });
@@ -18,12 +22,86 @@ async function cameraFetcher(url: string): Promise<Camera[]> {
   return payload;
 }
 
+/**
+ * Debounces online→offline transitions so a single missed poll doesn't
+ * flash a camera offline and back online every few seconds. A camera only
+ * gets shown as offline once it's been continuously reported offline for
+ * OFFLINE_GRACE_MS — if it reconnects before that, the UI never visibly
+ * changed. A camera that's never been seen online (e.g. genuinely down on
+ * first load) still shows offline immediately — there's nothing to debounce.
+ */
+function useStableCameraStatus(cameras: Camera[] | undefined): Camera[] | undefined {
+  const [displayOffline, setDisplayOffline] = useState<Set<string>>(new Set());
+  const everOnlineRef = useRef<Set<string>>(new Set());
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    if (!cameras) return;
+
+    cameras.forEach((camera) => {
+      const pendingTimer = timersRef.current.get(camera.id);
+
+      if (camera.status === "online") {
+        everOnlineRef.current.add(camera.id);
+        if (pendingTimer) {
+          clearTimeout(pendingTimer);
+          timersRef.current.delete(camera.id);
+        }
+        setDisplayOffline((prev) => {
+          if (!prev.has(camera.id)) return prev;
+          const next = new Set(prev);
+          next.delete(camera.id);
+          return next;
+        });
+        return;
+      }
+
+      if (!everOnlineRef.current.has(camera.id)) {
+        setDisplayOffline((prev) => (prev.has(camera.id) ? prev : new Set(prev).add(camera.id)));
+        return;
+      }
+
+      if (!pendingTimer) {
+        const timer = setTimeout(() => {
+          timersRef.current.delete(camera.id);
+          setDisplayOffline((prev) => new Set(prev).add(camera.id));
+        }, OFFLINE_GRACE_MS);
+        timersRef.current.set(camera.id, timer);
+      }
+    });
+
+    const currentIds = new Set(cameras.map((c) => c.id));
+    timersRef.current.forEach((timer, id) => {
+      if (!currentIds.has(id)) {
+        clearTimeout(timer);
+        timersRef.current.delete(id);
+      }
+    });
+  }, [cameras]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  return useMemo(() => {
+    if (!cameras) return cameras;
+    return cameras.map((camera) =>
+      displayOffline.has(camera.id) ? { ...camera, status: "offline" as const } : { ...camera, status: "online" as const }
+    );
+  }, [cameras, displayOffline]);
+}
+
 export function useCameras() {
-  return useSWR<Camera[], Error>("/api/stream-cameras", cameraFetcher, {
+  const swr = useSWR<Camera[], Error>("/api/stream-cameras", cameraFetcher, {
     refreshInterval,
     keepPreviousData: true,
     revalidateOnFocus: true,
   });
+  const stableData = useStableCameraStatus(swr.data);
+  return { ...swr, data: stableData };
 }
 
 export function useCamerasByZone(zoneId: string | null) {

@@ -6,6 +6,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
+import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
+import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
 import {
   useAlertHistory,
   useAlertRule,
@@ -13,7 +15,6 @@ import {
   useMarkAlertSeen,
   useUpdateAlertRuleStatus,
 } from "@/lib/hooks/useAlertRules";
-import { liveEventImageUrl } from "@/lib/hooks/useCameraLiveFeed";
 import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
 import { effectiveUnseenCount } from "@/lib/alertUnseen";
 import { formatDateTime } from "@/lib/formatters";
@@ -51,7 +52,10 @@ export function AlertRuleDetailPanel({
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {rule.label ?? "person"} · {rule.conditions?.triggerInside ? "enters zone" : "outside zone"}
                 </span>
-                <AlertRuleStatusBadge status={rule.status} />
+                <div className="flex items-center gap-1.5">
+                  <AlertCategoryBadge category={rule.category} />
+                  <AlertRuleStatusBadge status={rule.status} />
+                </div>
               </div>
               <SheetTitle>{rule.name ?? rule.alertId}</SheetTitle>
               {rule.description && (
@@ -63,9 +67,9 @@ export function AlertRuleDetailPanel({
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
                 {rule.latestEventId ? (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- proxied JPEG snapshot, not a Next-optimizable static asset */}
-                    <img
-                      src={liveEventImageUrl(rule.latestEventId)}
+                    <DetectionFrameImage
+                      key={rule.latestEventId}
+                      eventId={rule.latestEventId}
                       alt="Latest matched frame"
                       className="h-full w-full object-contain"
                     />
@@ -131,9 +135,8 @@ export function AlertRuleDetailPanel({
                       className="flex items-center gap-2.5 rounded-lg border border-surface-border bg-surface-2 p-2"
                     >
                       <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-black">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- proxied JPEG thumbnail */}
-                        <img
-                          src={liveEventImageUrl(match.eventId)}
+                        <DetectionFrameImage
+                          eventId={match.eventId}
                           alt="Matched frame"
                           className="h-full w-full object-cover"
                         />

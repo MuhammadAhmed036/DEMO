@@ -31,7 +31,8 @@ export default function RootLayout({
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
+      <body className="min-h-full flex flex-col bg-surface-1 text-foreground">
+        <Providers>{children}</Providers>
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -40,9 +41,6 @@ export default function RootLayout({
               '(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.classList.remove("dark")}catch(e){}})()',
           }}
         />
-      </head>
-      <body className="min-h-full flex flex-col bg-surface-1 text-foreground">
-        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { zoneColor } from "@/components/map/CameraLocationMap";
-import { liveEventImageUrl, useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
+import { useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
+import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
 import { cn } from "@/lib/utils";
 
 function formatDetectionTime(value: string | null): string {
@@ -25,9 +26,9 @@ function CameraLivePreview({ cameraId }: { cameraId: string }) {
     <div className="space-y-2">
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
         {feed.latestEventId ? (
-          // eslint-disable-next-line @next/next/no-img-element -- live JPEG proxied from the detection API, not a Next-optimizable static asset
-          <img
-            src={liveEventImageUrl(feed.latestEventId)}
+          <DetectionFrameImage
+            key={feed.latestEventId}
+            eventId={feed.latestEventId}
             alt="Latest detection frame"
             className="h-full w-full object-contain"
           />
@@ -79,7 +80,7 @@ function ZoneSummaryList({
       <div className="border-b border-surface-border p-3">
         <h3 className="text-sm font-semibold">Camera Zones</h3>
         <p className="text-xs text-muted-foreground">
-          {zoneSummaries.length} zones · {cameras.length} cameras registered
+          {zoneSummaries.length} zones · {cameras.length} cameras total
         </p>
       </div>
       <div className="flex-1 space-y-1.5 overflow-y-auto p-3">
@@ -107,8 +108,8 @@ function ZoneSummaryList({
         ))}
         {unplaced > 0 && (
           <p className="rounded-lg border border-dashed border-surface-border p-3 text-xs text-muted-foreground">
-            {unplaced} camera{unplaced === 1 ? "" : "s"} in the registry have no coordinates yet —
-            select one from the list below to place it.
+            {unplaced} camera{unplaced === 1 ? "" : "s"} have no coordinates yet — select one from
+            the list below to place it.
           </p>
         )}
         <div className="space-y-1 pt-1">
@@ -127,6 +128,11 @@ function ZoneSummaryList({
                   style={{ backgroundColor: zoneColor(camera.zone) }}
                 />
                 <span className="truncate">{camera.cameraName}</span>
+                {!camera.isRegistered && (
+                  <span className="shrink-0 rounded-full bg-severity-medium/15 px-1.5 py-0.5 text-[10px] font-medium text-severity-medium">
+                    New
+                  </span>
+                )}
               </span>
               {camera.latitude === null ? (
                 <MapPinOff className="size-3.5 shrink-0 text-severity-medium" />

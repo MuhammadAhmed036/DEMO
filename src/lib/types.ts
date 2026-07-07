@@ -123,6 +123,13 @@ export interface CameraLocation {
   enabled: boolean;
   createdAt: string | null;
   updatedAt: string | null;
+  /**
+   * False for cameras known from the live-stream feed that don't have a
+   * `camera_locations` row on the backend yet (no detection data to sync
+   * from). Placing one of these on the map creates its registry row instead
+   * of updating an existing one.
+   */
+  isRegistered: boolean;
 }
 
 export interface CameraEventDetection {
@@ -192,6 +199,13 @@ export interface AlertConditions {
 
 export type AlertRuleStatus = "active" | "resolved" | "muted" | string;
 
+/**
+ * User-facing severity of an alert rule. The `/api/v2/alerts` backend has
+ * no native field for this — it's stored in the rule's free-form `metadata`
+ * object (same approach already used for `refImageWidth`/`refImageHeight`).
+ */
+export type AlertCategory = "critical" | "medium" | "low";
+
 /** A saved region-based alert rule from the real `/api/v2/alerts` backend. */
 export interface AlertRuleV2 {
   id: number;
@@ -206,6 +220,7 @@ export interface AlertRuleV2 {
   sourceEventId: string | null;
   boundingBox: AlertBoundingBox | null;
   conditions: AlertConditions | null;
+  category: AlertCategory;
   refImageWidth: number | null;
   refImageHeight: number | null;
   personCountInside: number;

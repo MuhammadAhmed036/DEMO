@@ -8,6 +8,7 @@ import {
   ISLAMABAD_BOUNDS,
   ISLAMABAD_CENTER,
   ISLAMABAD_DEFAULT_ZOOM,
+  ISLAMABAD_MAX_ZOOM,
   buildSatelliteStyle,
   buildVectorStyle,
 } from "@/components/map/mapStyles";
@@ -64,9 +65,10 @@ function applyMarkerStyle(el: HTMLButtonElement, camera: CameraLocation, selecte
   el.className = cn(
     "flex items-center justify-center rounded-full border-2 shadow-lg transition-[filter,box-shadow]",
     selected ? "border-white" : "border-black/30",
-    placing
-      ? "animate-pulse cursor-crosshair"
-      : "cursor-grab hover:brightness-110 hover:shadow-xl active:cursor-grabbing"
+    (placing || selected) && "animate-pulse",
+    // Not draggable unless armed for placement — a plain click only
+    // selects a camera, it never moves it.
+    placing ? "cursor-crosshair" : "cursor-pointer hover:brightness-110 hover:shadow-xl"
   );
   const size = selected ? 36 : 28;
   el.style.width = `${size}px`;
@@ -103,6 +105,16 @@ export function CameraLocationMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Map<string, Marker>>(new Map());
+  // Cameras currently mid-drag gesture — the periodic poll refresh (every
+  // few seconds) must not reposition these, or the marker fights the user's
+  // own drag and visibly snaps back to the old server position.
+  const draggingRef = useRef<Set<string>>(new Set());
+  // Cameras with a position the user just set (drag / pick-on-map) that the
+  // backend hasn't echoed back yet. Without this, the marker snaps back to
+  // the stale pre-save position for the few hundred ms between the drop and
+  // the mutation's cache refresh landing, then snaps forward again —
+  // exactly the "camera doesn't stay where I put it" symptom.
+  const pendingPositionRef = useRef<Map<string, [number, number]>>(new Map());
   const [mapReady, setMapReady] = useState(false);
   const [viewMode, setViewMode] = useState<"vector" | "satellite">("vector");
   const [theme, setTheme] = useState<MapTheme>(() => getDocumentTheme());
@@ -132,6 +144,15 @@ export function CameraLocationMap({
     if (!containerRef.current) return;
     ensurePmtilesProtocol();
 
+    // React Strict Mode (on by default here) mounts every effect twice in
+    // dev: create → cleanup → create again. If this first, thrown-away
+    // map's async "style.load" resolves after its own cleanup has already
+    // run, it must not be allowed to flip `mapReady` — that would gate the
+    // marker-sync effect open against the *second* (real) map before that
+    // map's own style has actually finished loading, and any interaction
+    // (zoom, pan, click) in that window reads a half-initialized map.
+    let cancelled = false;
+
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: buildVectorStyle(getDocumentTheme()),
@@ -139,14 +160,27 @@ export function CameraLocationMap({
       zoom: ISLAMABAD_DEFAULT_ZOOM,
       maxBounds: ISLAMABAD_BOUNDS,
       minZoom: 9,
-      maxZoom: 20,
+      maxZoom: ISLAMABAD_MAX_ZOOM,
       attributionControl: false,
     });
     mapRef.current = map;
-    map.on("style.load", () => setMapReady(true));
+    map.on("style.load", () => {
+      if (!cancelled) setMapReady(true);
+    });
+
+    // Without this, MapLibre's internal canvas size falls out of sync
+    // whenever the container is resized by layout (sidebar/panel reflow,
+    // window resize, fullscreen toggle) — panning then moves the rendered
+    // tiles based on a stale canvas size while markers reproject against
+    // the actual one, so pins visibly drift away from their real position
+    // the more you interact with the map.
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(containerRef.current);
 
     const markers = markersRef.current;
     return () => {
+      cancelled = true;
+      resizeObserver.disconnect();
       markers.forEach((marker) => marker.remove());
       markers.clear();
       map.remove();
@@ -166,6 +200,7 @@ export function CameraLocationMap({
     if (!map) return;
     function handleClick(event: maplibregl.MapMouseEvent) {
       if (!placementCameraId) return;
+      pendingPositionRef.current.set(placementCameraId, [event.lngLat.lng, event.lngLat.lat]);
       onPickLocationRef.current(event.lngLat.lat, event.lngLat.lng);
     }
     map.on("click", handleClick);
@@ -203,11 +238,29 @@ export function CameraLocationMap({
     placedCameras.forEach((camera) => {
       const selected = camera.cameraId === selectedCameraId;
       const placing = camera.cameraId === placementCameraId;
-      const lngLat: [number, number] = [camera.longitude as number, camera.latitude as number];
+      let lngLat: [number, number] = [camera.longitude as number, camera.latitude as number];
+
+      const pending = pendingPositionRef.current.get(camera.cameraId);
+      if (pending) {
+        const confirmed =
+          Math.abs(pending[0] - lngLat[0]) < 1e-6 && Math.abs(pending[1] - lngLat[1]) < 1e-6;
+        if (confirmed) {
+          pendingPositionRef.current.delete(camera.cameraId);
+        } else {
+          // The backend hasn't echoed the just-saved position back yet —
+          // keep showing where the user actually put it, not stale data.
+          lngLat = pending;
+        }
+      }
 
       const existing = markers.get(camera.cameraId);
       if (existing) {
-        existing.setLngLat(lngLat);
+        if (!draggingRef.current.has(camera.cameraId)) {
+          existing.setLngLat(lngLat);
+        }
+        // Only the camera currently armed for placement can be dragged —
+        // every other pin is fixed and only responds to clicks (select).
+        existing.setDraggable(placing);
         applyMarkerStyle(existing.getElement() as HTMLButtonElement, camera, selected, placing);
         return;
       }
@@ -218,11 +271,16 @@ export function CameraLocationMap({
         event.stopPropagation();
         onSelectCameraRef.current(camera.cameraId);
       };
-      const marker = new maplibregl.Marker({ element: el, anchor: "center", draggable: true })
+      const marker = new maplibregl.Marker({ element: el, anchor: "center", draggable: placing })
         .setLngLat(lngLat)
         .addTo(map);
+      marker.on("dragstart", () => {
+        draggingRef.current.add(camera.cameraId);
+      });
       marker.on("dragend", () => {
+        draggingRef.current.delete(camera.cameraId);
         const { lat, lng } = marker.getLngLat();
+        pendingPositionRef.current.set(camera.cameraId, [lng, lat]);
         onDragEndRef.current(camera.cameraId, lat, lng);
       });
       markers.set(camera.cameraId, marker);
@@ -232,6 +290,14 @@ export function CameraLocationMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !flyToTarget) return;
+    // Selecting a camera swaps the side panel's content (list → detail
+    // form) in this same render, which can change the map container's own
+    // height right now. The ResizeObserver above picks that up
+    // asynchronously, so without forcing a resize here first, flyTo can
+    // compute its target against the container's stale pre-swap size and
+    // land the marker below the container's actual (now shorter) bottom
+    // edge — outside the visible, clipped area.
+    map.resize();
     map.flyTo({ center: flyToTarget.center, zoom: flyToTarget.zoom, duration: 700 });
   }, [flyToTarget, mapReady]);
 
