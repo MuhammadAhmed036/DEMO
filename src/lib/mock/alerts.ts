@@ -51,19 +51,15 @@ function buildAlerts(): Alert[] {
   let index = 1;
   let minutesAgo = 0;
 
-  // "All Alerts" feed (36 total): Critical 7, High 12, Medium 10, Low 7,
-  // statuses split Active 28 / Acknowledged 6 / Investigating 2.
+  // "All Alerts" feed (4 total, kept small for a focused demo): Critical 1,
+  // High 1, Medium 1, Low 1, statuses split Active 3 / Acknowledged 1.
   const severityPlan: { severity: AlertSeverity; count: number }[] = [
-    { severity: "critical", count: 7 },
-    { severity: "high", count: 12 },
-    { severity: "medium", count: 10 },
-    { severity: "low", count: 7 },
+    { severity: "critical", count: 1 },
+    { severity: "high", count: 1 },
+    { severity: "medium", count: 1 },
+    { severity: "low", count: 1 },
   ];
-  const statusPlan: AlertStatus[] = [
-    ...Array(28).fill("active"),
-    ...Array(6).fill("acknowledged"),
-    ...Array(2).fill("investigating"),
-  ];
+  const statusPlan: AlertStatus[] = [...Array(3).fill("active"), ...Array(1).fill("acknowledged")];
   const shuffledStatuses = rng.shuffle(statusPlan);
 
   let statusCursor = 0;
@@ -75,8 +71,9 @@ function buildAlerts(): Alert[] {
     }
   });
 
-  // Historical resolved feed (312) — coarser severity mix, all resolved/closed.
-  for (let i = 0; i < 312; i++) {
+  // Historical resolved feed — small tail so the demo has a bit of history
+  // without piling up hundreds of rows.
+  for (let i = 0; i < 8; i++) {
     minutesAgo += rng.int(3, 25);
     const severity = rng.pick<AlertSeverity>(["critical", "high", "medium", "low"]);
     const status: AlertStatus = rng.bool(0.92) ? "resolved" : "closed";
@@ -90,7 +87,7 @@ function buildAlerts(): Alert[] {
 
 export const ALERTS: Alert[] = buildAlerts();
 
-export const ALERT_FEED_COUNT = 36;
+export const ALERT_FEED_COUNT = 4;
 
 export function getLiveAlertFeed(): Alert[] {
   return ALERTS.filter((a) => a.status !== "resolved" && a.status !== "closed");

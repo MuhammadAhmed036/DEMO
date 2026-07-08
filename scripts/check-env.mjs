@@ -8,6 +8,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+// Demo deploys (e.g. a backend-free Vercel demo) run entirely on mock data
+// and never call the real backend, so none of the vars below are needed.
+// Set this in Vercel's project env vars (no .env file required there).
+if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+  console.log("\x1b[33m✓ NEXT_PUBLIC_DEMO_MODE=true — skipping backend env checks\x1b[0m");
+  process.exit(0);
+}
+
 const REQUIRED_VARS = [
   "NEXT_PUBLIC_API_BASE",
   "STREAMS_API_URL",

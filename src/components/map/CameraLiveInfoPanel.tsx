@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import type { CameraLocation } from "@/lib/types";
 import { useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
-import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
+import { CameraFrame } from "@/components/alerts/CameraFrame";
 import { zoneColor } from "@/components/map/CameraLocationMap";
 import { cn } from "@/lib/utils";
 
@@ -28,18 +28,13 @@ export function CameraLiveInfoPanel({
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="relative aspect-video w-full shrink-0 bg-black">
-        {feed.latestEventId ? (
-          <DetectionFrameImage
-            key={feed.latestEventId}
-            eventId={feed.latestEventId}
-            alt={`${displayName} — latest frame`}
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            Waiting for live frame…
-          </div>
-        )}
+        <CameraFrame
+          cameraId={camera.cameraId}
+          eventId={feed.latestEventId}
+          alt={`${displayName} — latest frame`}
+          className="h-full w-full object-contain"
+          emptyLabel="Waiting for live frame…"
+        />
         <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
           <span
             className={cn(

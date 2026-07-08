@@ -4,7 +4,7 @@ import { Eye } from "lucide-react";
 import type { AlertRuleV2 } from "@/lib/types";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
 import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
-import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
+import { CameraFrame } from "@/components/alerts/CameraFrame";
 import { Button } from "@/components/ui/button";
 import { useMarkAlertSeen, useUpdateAlertRuleStatus } from "@/lib/hooks/useAlertRules";
 import { useAlertSeenBaselineStore } from "@/lib/store/useAlertSeenBaselineStore";
@@ -27,18 +27,12 @@ export function AlertRuleFeedCard({
     <div className="rounded-lg border border-surface-border bg-surface-2 p-3">
       <div className="flex gap-3">
         <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-black">
-          {rule.latestEventId ? (
-            <DetectionFrameImage
-              key={rule.latestEventId}
-              eventId={rule.latestEventId}
-              alt="Latest matched frame"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-              No match yet
-            </div>
-          )}
+          <CameraFrame
+            cameraId={rule.cameraId}
+            eventId={rule.latestEventId}
+            alt="Latest matched frame"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">

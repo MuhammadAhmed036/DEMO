@@ -59,6 +59,7 @@ export function CameraThumbnail({
           className="absolute inset-0 size-full bg-black object-cover"
           autoPlay
           muted
+          loop
           playsInline
           preload="metadata"
           onError={() => setVideoFailedUrl(feedUrl ?? null)}

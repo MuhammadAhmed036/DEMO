@@ -1,4 +1,6 @@
 import type { NextRequest } from "next/server";
+import { isDemoMode } from "@/lib/demoMode";
+import { handleDemoAiRequest } from "@/lib/mock/demoAiApi";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,7 @@ export async function GET(
   if (!isAllowed(endpoint, GET_ALLOWED_PREFIXES, GET_ALLOWED_EXACT)) {
     return Response.json({ error: "Unknown AI API endpoint" }, { status: 404 });
   }
+  if (isDemoMode()) return handleDemoAiRequest(endpoint, "GET", request);
   return proxy(request, endpoint, "GET");
 }
 
@@ -74,6 +77,7 @@ export async function POST(
   if (!isAllowed(endpoint, WRITE_ALLOWED_PREFIXES)) {
     return Response.json({ error: "Unknown AI API endpoint" }, { status: 404 });
   }
+  if (isDemoMode()) return handleDemoAiRequest(endpoint, "POST", request);
   return proxy(request, endpoint, "POST");
 }
 
@@ -86,6 +90,7 @@ export async function PATCH(
   if (!isAllowed(endpoint, WRITE_ALLOWED_PREFIXES)) {
     return Response.json({ error: "Unknown AI API endpoint" }, { status: 404 });
   }
+  if (isDemoMode()) return handleDemoAiRequest(endpoint, "PATCH", request);
   return proxy(request, endpoint, "PATCH");
 }
 
@@ -98,5 +103,6 @@ export async function DELETE(
   if (!isAllowed(endpoint, ["v2/alerts"])) {
     return Response.json({ error: "Unknown AI API endpoint" }, { status: 404 });
   }
+  if (isDemoMode()) return handleDemoAiRequest(endpoint, "DELETE", request);
   return proxy(request, endpoint, "DELETE");
 }

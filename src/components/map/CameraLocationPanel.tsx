@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { zoneColor } from "@/components/map/CameraLocationMap";
 import { useCameraLiveFeed } from "@/lib/hooks/useCameraLiveFeed";
-import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
+import { CameraFrame } from "@/components/alerts/CameraFrame";
 import { cn } from "@/lib/utils";
 
 function formatDetectionTime(value: string | null): string {
@@ -25,18 +25,13 @@ function CameraLivePreview({ cameraId }: { cameraId: string }) {
   return (
     <div className="space-y-2">
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
-        {feed.latestEventId ? (
-          <DetectionFrameImage
-            key={feed.latestEventId}
-            eventId={feed.latestEventId}
-            alt="Latest detection frame"
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            Waiting for live frame…
-          </div>
-        )}
+        <CameraFrame
+          cameraId={cameraId}
+          eventId={feed.latestEventId}
+          alt="Latest detection frame"
+          className="h-full w-full object-contain"
+          emptyLabel="Waiting for live frame…"
+        />
         <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
           <span
             className={cn(

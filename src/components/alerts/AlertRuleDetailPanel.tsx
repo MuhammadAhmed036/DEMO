@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
 import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
-import { DetectionFrameImage } from "@/components/alerts/DetectionFrameImage";
+import { CameraFrame } from "@/components/alerts/CameraFrame";
+import { isDemoMode } from "@/lib/demoMode";
 import {
   useAlertHistory,
   useAlertRule,
@@ -65,30 +66,23 @@ export function AlertRuleDetailPanel({
 
             <div className="space-y-4 p-4">
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
-                {rule.latestEventId ? (
-                  <>
-                    <DetectionFrameImage
-                      key={rule.latestEventId}
-                      eventId={rule.latestEventId}
-                      alt="Latest matched frame"
-                      className="h-full w-full object-contain"
-                    />
-                    {rule.boundingBox && rule.refImageWidth && rule.refImageHeight && (
-                      <div
-                        className="pointer-events-none absolute border-2 border-primary bg-primary/15"
-                        style={{
-                          left: `${(rule.boundingBox.x1 / rule.refImageWidth) * 100}%`,
-                          top: `${(rule.boundingBox.y1 / rule.refImageHeight) * 100}%`,
-                          width: `${((rule.boundingBox.x2 - rule.boundingBox.x1) / rule.refImageWidth) * 100}%`,
-                          height: `${((rule.boundingBox.y2 - rule.boundingBox.y1) / rule.refImageHeight) * 100}%`,
-                        }}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    No matched detection yet
-                  </div>
+                <CameraFrame
+                  cameraId={rule.cameraId}
+                  eventId={rule.latestEventId}
+                  alt="Latest matched frame"
+                  className="h-full w-full object-contain"
+                  emptyLabel="No matched detection yet"
+                />
+                {!isDemoMode() && rule.boundingBox && rule.refImageWidth && rule.refImageHeight && (
+                  <div
+                    className="pointer-events-none absolute border-2 border-primary bg-primary/15"
+                    style={{
+                      left: `${(rule.boundingBox.x1 / rule.refImageWidth) * 100}%`,
+                      top: `${(rule.boundingBox.y1 / rule.refImageHeight) * 100}%`,
+                      width: `${((rule.boundingBox.x2 - rule.boundingBox.x1) / rule.refImageWidth) * 100}%`,
+                      height: `${((rule.boundingBox.y2 - rule.boundingBox.y1) / rule.refImageHeight) * 100}%`,
+                    }}
+                  />
                 )}
               </div>
 
@@ -135,7 +129,8 @@ export function AlertRuleDetailPanel({
                       className="flex items-center gap-2.5 rounded-lg border border-surface-border bg-surface-2 p-2"
                     >
                       <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-black">
-                        <DetectionFrameImage
+                        <CameraFrame
+                          cameraId={match.cameraId}
                           eventId={match.eventId}
                           alt="Matched frame"
                           className="h-full w-full object-cover"

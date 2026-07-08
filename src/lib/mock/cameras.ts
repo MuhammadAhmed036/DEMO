@@ -111,6 +111,18 @@ function buildCameras(): Camera[] {
     }
   });
 
+  // With only a handful of demo cameras, random chance can land 100% online,
+  // which reads as fake for a surveillance demo — guarantee at least one
+  // visibly offline camera so the "Offline Cameras" stat is never a flat 0.
+  if (cameras.length > 0 && cameras.every((c) => c.status === "online")) {
+    const last = cameras[cameras.length - 1];
+    last.status = "offline";
+    last.currentPersonCount = 0;
+    last.densityPercent = 0;
+    last.density = "Low";
+    last.aiFeatures = last.aiFeatures.map((f) => ({ ...f, active: false }));
+  }
+
   return cameras;
 }
 

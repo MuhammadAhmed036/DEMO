@@ -15,7 +15,7 @@ export const ZONES: Zone[] = [
     shortName: "Blue Area / F Sector",
     color: "#3b82f6",
     center: [73.0479, 33.7295],
-    cameraCount: 46,
+    cameraCount: 1,
   },
   {
     id: "zone-g-sector",
@@ -23,7 +23,7 @@ export const ZONES: Zone[] = [
     shortName: "G Sector",
     color: "#14b8a6",
     center: [72.9966, 33.7008],
-    cameraCount: 35,
+    cameraCount: 1,
   },
   {
     id: "zone-i-sector",
@@ -31,7 +31,7 @@ export const ZONES: Zone[] = [
     shortName: "I Sector",
     color: "#a855f7",
     center: [73.085, 33.67],
-    cameraCount: 55,
+    cameraCount: 1,
   },
   {
     id: "zone-h-13",
@@ -39,7 +39,7 @@ export const ZONES: Zone[] = [
     shortName: "H-13",
     color: "#22c55e",
     center: [73.02, 33.63],
-    cameraCount: 31,
+    cameraCount: 1,
   },
   {
     id: "zone-faizabad",
@@ -47,7 +47,7 @@ export const ZONES: Zone[] = [
     shortName: "Faizabad / I-8",
     color: "#f59e0b",
     center: [73.055, 33.655],
-    cameraCount: 32,
+    cameraCount: 1,
   },
   {
     id: "zone-rawalpindi-border",
@@ -55,7 +55,7 @@ export const ZONES: Zone[] = [
     shortName: "Rawalpindi Border Area",
     color: "#f97316",
     center: [73.09, 33.595],
-    cameraCount: 27,
+    cameraCount: 1,
   },
   {
     id: "zone-expressway",
@@ -63,7 +63,7 @@ export const ZONES: Zone[] = [
     shortName: "Expressway Corridor",
     color: "#0ea5e9",
     center: [73.12, 33.57],
-    cameraCount: 22,
+    cameraCount: 0,
   },
 ];
 

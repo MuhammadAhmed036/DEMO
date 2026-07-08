@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { wsBaseUrl } from "@/lib/wsBaseUrl";
+import { isDemoMode } from "@/lib/demoMode";
+import { CAMERAS } from "@/lib/mock/cameras";
 
 export interface CameraLiveFeedState {
   connected: boolean;
@@ -32,15 +34,43 @@ export function liveEventImageUrl(eventId: string): string {
 }
 
 /** Subscribes to `/ws/v2/people-count` for one camera and tracks its latest detection. */
+function demoInitialState(cameraId: string): CameraLiveFeedState {
+  const camera = CAMERAS.find((c) => c.id === cameraId.toLowerCase());
+  return {
+    connected: true,
+    cameraName: camera?.name ?? cameraId,
+    zone: camera?.zoneName ?? null,
+    scene: camera?.location ?? null,
+    latestEventId: null,
+    peopleCount: camera?.currentPersonCount ?? 0,
+    lastDetectionTime: new Date().toISOString(),
+    error: null,
+  };
+}
+
 export function useCameraLiveFeed(cameraId: string | null) {
   const base = wsBaseUrl();
-  const [state, setState] = useState<CameraLiveFeedState>(INITIAL_STATE);
+  // Callers should `key` the component using this hook by `cameraId` so a
+  // camera switch remounts fresh instead of resetting state from an effect.
+  const [state, setState] = useState<CameraLiveFeedState>(() =>
+    isDemoMode() && cameraId ? demoInitialState(cameraId) : INITIAL_STATE
+  );
 
   useEffect(() => {
-    // Callers should `key` the component using this hook by `cameraId` so a
-    // camera switch remounts fresh (via the useState initializer above)
-    // instead of resetting state from within this effect.
-    if (!cameraId || !base) return;
+    if (!cameraId) return;
+
+    if (isDemoMode()) {
+      const interval = setInterval(() => {
+        setState((s) => ({
+          ...s,
+          peopleCount: Math.max(0, (s.peopleCount ?? 0) + Math.round((Math.random() - 0.5) * 4)),
+          lastDetectionTime: new Date().toISOString(),
+        }));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+
+    if (!base) return;
 
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -108,7 +138,7 @@ export function useCameraLiveFeed(cameraId: string | null) {
     };
   }, [cameraId, base]);
 
-  if (cameraId && !base) {
+  if (cameraId && !base && !isDemoMode()) {
     return { ...INITIAL_STATE, error: "NEXT_PUBLIC_API_BASE is not configured" };
   }
   return state;
