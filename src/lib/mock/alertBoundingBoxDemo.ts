@@ -15,25 +15,25 @@ export const ALERT_BBOX_DEMO_ITEMS: AlertBoundingBoxDemoItem[] = [
   {
     key: "airport_persons",
     title: "Airport - Person Detection",
-    boundingBoxImage: "/alerts/bounding_box/airport_persons.png",
-    eventImages: ["/alerts/events/airport.png", "/alerts/events/airport2.png"],
+    boundingBoxImage: "/alerts/bounding_box/airport_persons.jpg",
+    eventImages: ["/alerts/events/airport.jpg", "/alerts/events/airport2.jpg"],
   },
   {
     key: "ceo",
     title: "CEO Office",
-    boundingBoxImage: "/alerts/bounding_box/ceo.png",
+    boundingBoxImage: "/alerts/bounding_box/ceo.jpg",
     eventImages: ["/alerts/events/ceooffice.jpg", "/alerts/events/ceooffice2.jpg"],
   },
   {
     key: "entrance",
     title: "Entrance",
-    boundingBoxImage: "/alerts/bounding_box/entrance.png",
+    boundingBoxImage: "/alerts/bounding_box/entrance.jpg",
     eventImages: ["/alerts/events/entrance.jpg", "/alerts/events/entrance2.jpg"],
   },
   {
     key: "kitchen",
     title: "Kitchen",
-    boundingBoxImage: "/alerts/bounding_box/kitchen.png",
+    boundingBoxImage: "/alerts/bounding_box/kitchen.jpg",
     eventImages: ["/alerts/events/kitchen.jpg", "/alerts/events/kitchen2.jpg"],
   },
 ];

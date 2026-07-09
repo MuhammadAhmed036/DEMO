@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Camera as CameraIcon, Check, Clock, MapPin, Trash2, VolumeX } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -69,11 +70,13 @@ export function AlertRuleDetailPanel({
             <div className="space-y-4 p-4">
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
                 {boundingBoxDemo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={boundingBoxDemo.boundingBoxImage}
                     alt={`${boundingBoxDemo.title} — detected bounding box`}
-                    className="h-full w-full object-contain"
+                    fill
+                    sizes="(min-width: 640px) 448px, 100vw"
+                    className="object-contain"
+                    priority
                   />
                 ) : (
                   <>
@@ -138,13 +141,15 @@ export function AlertRuleDetailPanel({
                         href={src}
                         target="_blank"
                         rel="noreferrer"
-                        className="block aspect-video overflow-hidden rounded-lg border border-surface-border bg-black"
+                        className="relative block aspect-video overflow-hidden rounded-lg border border-surface-border bg-black"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={src}
                           alt={`${boundingBoxDemo.title} event snapshot`}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="(min-width: 640px) 210px, 45vw"
+                          className="object-cover"
+                          loading="lazy"
                         />
                       </a>
                     ))}
