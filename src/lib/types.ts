@@ -219,6 +219,7 @@ export interface AlertRuleV2 {
   description: string | null;
   sourceEventId: string | null;
   boundingBox: AlertBoundingBox | null;
+  demoImageKey: string | null;
   conditions: AlertConditions | null;
   category: AlertCategory;
   refImageWidth: number | null;

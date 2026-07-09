@@ -1,6 +1,6 @@
 import { createRng, REFERENCE_NOW } from "@/lib/mock/seed";
 import { CAMERAS } from "@/lib/mock/cameras";
-import { ALERT_TYPE_DEFS } from "@/lib/mock/alert-types";
+import { ALERT_BBOX_DEMO_ITEMS } from "@/lib/mock/alertBoundingBoxDemo";
 import type { AlertCategory } from "@/lib/types";
 
 const CATEGORY_BY_SEVERITY: Record<string, AlertCategory> = {
@@ -8,6 +8,34 @@ const CATEGORY_BY_SEVERITY: Record<string, AlertCategory> = {
   high: "medium",
   medium: "medium",
   low: "low",
+};
+
+// This demo only detects people (every rule's `label` is "person") — these
+// per-location titles/descriptions replace the old randomly-picked
+// ALERT_TYPE_DEFS entries, which included vehicle/traffic copy ("Traffic
+// Violation", "Vehicle in No Parking Zone") that made no sense next to a
+// person-only bounding-box snapshot.
+const PERSON_ALERT_COPY: Record<string, { title: string; description: string; severity: string }> = {
+  airport_persons: {
+    title: "Person Detected - Airport",
+    description: "Person detected in the airport terminal camera view",
+    severity: "high",
+  },
+  ceo: {
+    title: "Person Detected - CEO Office",
+    description: "Unauthorized person detected in the CEO office",
+    severity: "critical",
+  },
+  entrance: {
+    title: "Person Detected - Entrance",
+    description: "Person detected entering through the main entrance",
+    severity: "medium",
+  },
+  kitchen: {
+    title: "Person Detected - Kitchen",
+    description: "Person detected in the kitchen area",
+    severity: "low",
+  },
 };
 
 type BoundingBoxRow = { x1: number; y1: number; x2: number; y2: number; region?: string };
@@ -30,6 +58,7 @@ interface AlertRuleRow {
   description: string | null;
   source_event_id: string | null;
   bounding_box: BoundingBoxRow | null;
+  demo_image_key: string | null;
   conditions: ConditionsRow | null;
   metadata: { category: AlertCategory; ref_image_width: number; ref_image_height: number };
   person_count_inside: number;
@@ -72,7 +101,8 @@ function buildRules(): AlertRuleRow[] {
 
   for (let i = 0; i < 4; i++) {
     const camera = rng.pick(CAMERAS);
-    const def = rng.pick(ALERT_TYPE_DEFS);
+    const bboxItem = ALERT_BBOX_DEMO_ITEMS[i % ALERT_BBOX_DEMO_ITEMS.length];
+    const copy = PERSON_ALERT_COPY[bboxItem.key];
     const status = rng.pick(statusPool);
     const createdMinutesAgo = rng.int(20, 60 * 24 * 5);
     const createdAt = new Date(REFERENCE_NOW.getTime() - createdMinutesAgo * 60_000).toISOString();
@@ -87,8 +117,8 @@ function buildRules(): AlertRuleRow[] {
       collection_id: null,
       collection_name: null,
       label: "person",
-      name: def.title,
-      description: def.description,
+      name: copy.title,
+      description: copy.description,
       source_event_id: null,
       bounding_box: {
         x1: rng.int(50, 200),
@@ -96,6 +126,7 @@ function buildRules(): AlertRuleRow[] {
         x2: rng.int(300, 500),
         y2: rng.int(300, 450),
       },
+      demo_image_key: bboxItem.key,
       conditions: {
         condition: "boundary",
         trigger_inside: true,
@@ -103,7 +134,7 @@ function buildRules(): AlertRuleRow[] {
         person_label: "person",
       },
       metadata: {
-        category: CATEGORY_BY_SEVERITY[def.defaultSeverity] ?? "medium",
+        category: CATEGORY_BY_SEVERITY[copy.severity] ?? "medium",
         ref_image_width: 1920,
         ref_image_height: 1080,
       },
@@ -189,6 +220,7 @@ export function createAlertRuleRow(payload: Record<string, unknown>): AlertRuleR
     description: (payload.description as string) ?? null,
     source_event_id: (payload.source_event_id as string) ?? null,
     bounding_box: (payload.bounding_box as BoundingBoxRow) ?? null,
+    demo_image_key: null,
     conditions: (payload.conditions as ConditionsRow) ?? null,
     metadata: (payload.metadata as AlertRuleRow["metadata"]) ?? {
       category: "medium",

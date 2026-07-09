@@ -9,6 +9,7 @@ import { AlertRuleStatusBadge } from "@/components/alerts/AlertRuleStatusBadge";
 import { AlertCategoryBadge } from "@/components/alerts/AlertCategoryBadge";
 import { CameraFrame } from "@/components/alerts/CameraFrame";
 import { isDemoMode } from "@/lib/demoMode";
+import { getAlertBoundingBoxDemoForRule } from "@/lib/mock/alertBoundingBoxDemo";
 import {
   useAlertHistory,
   useAlertRule,
@@ -36,6 +37,7 @@ export function AlertRuleDetailPanel({
   const deleteRule = useDeleteAlertRule();
   const baseline = useAlertSeenBaselineStore((s) => (alertId ? (s.baselines[alertId] ?? 0) : 0));
   const unseen = rule ? effectiveUnseenCount(rule, baseline) : 0;
+  const boundingBoxDemo = rule ? getAlertBoundingBoxDemoForRule(rule) : undefined;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -66,23 +68,34 @@ export function AlertRuleDetailPanel({
 
             <div className="space-y-4 p-4">
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
-                <CameraFrame
-                  cameraId={rule.cameraId}
-                  eventId={rule.latestEventId}
-                  alt="Latest matched frame"
-                  className="h-full w-full object-contain"
-                  emptyLabel="No matched detection yet"
-                />
-                {!isDemoMode() && rule.boundingBox && rule.refImageWidth && rule.refImageHeight && (
-                  <div
-                    className="pointer-events-none absolute border-2 border-primary bg-primary/15"
-                    style={{
-                      left: `${(rule.boundingBox.x1 / rule.refImageWidth) * 100}%`,
-                      top: `${(rule.boundingBox.y1 / rule.refImageHeight) * 100}%`,
-                      width: `${((rule.boundingBox.x2 - rule.boundingBox.x1) / rule.refImageWidth) * 100}%`,
-                      height: `${((rule.boundingBox.y2 - rule.boundingBox.y1) / rule.refImageHeight) * 100}%`,
-                    }}
+                {boundingBoxDemo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={boundingBoxDemo.boundingBoxImage}
+                    alt={`${boundingBoxDemo.title} — detected bounding box`}
+                    className="h-full w-full object-contain"
                   />
+                ) : (
+                  <>
+                    <CameraFrame
+                      cameraId={rule.cameraId}
+                      eventId={rule.latestEventId}
+                      alt="Latest matched frame"
+                      className="h-full w-full object-contain"
+                      emptyLabel="No matched detection yet"
+                    />
+                    {!isDemoMode() && rule.boundingBox && rule.refImageWidth && rule.refImageHeight && (
+                      <div
+                        className="pointer-events-none absolute border-2 border-primary bg-primary/15"
+                        style={{
+                          left: `${(rule.boundingBox.x1 / rule.refImageWidth) * 100}%`,
+                          top: `${(rule.boundingBox.y1 / rule.refImageHeight) * 100}%`,
+                          width: `${((rule.boundingBox.x2 - rule.boundingBox.x1) / rule.refImageWidth) * 100}%`,
+                          height: `${((rule.boundingBox.y2 - rule.boundingBox.y1) / rule.refImageHeight) * 100}%`,
+                        }}
+                      />
+                    )}
+                  </>
                 )}
               </div>
 
@@ -112,6 +125,32 @@ export function AlertRuleDetailPanel({
                   <span className="font-medium">{rule.eventCount}</span>
                 </div>
               </div>
+
+              {boundingBoxDemo && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Detection Snapshots ({boundingBoxDemo.eventImages.length})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {boundingBoxDemo.eventImages.map((src) => (
+                      <a
+                        key={src}
+                        href={src}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block aspect-video overflow-hidden rounded-lg border border-surface-border bg-black"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={src}
+                          alt={`${boundingBoxDemo.title} event snapshot`}
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h4 className="mb-1.5 text-xs font-medium text-muted-foreground">

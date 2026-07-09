@@ -76,6 +76,7 @@ function normalizeAlertRule(raw: unknown): AlertRuleV2 {
     description: asString(record.description),
     sourceEventId: asString(record.source_event_id),
     boundingBox: normalizeBoundingBox(record.bounding_box),
+    demoImageKey: asString(record.demo_image_key),
     conditions: normalizeConditions(record.conditions),
     category: asCategory(metadata.category),
     refImageWidth: asNumber(metadata.ref_image_width),
