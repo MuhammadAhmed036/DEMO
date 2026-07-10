@@ -137,7 +137,7 @@ export function LoginForm() {
                 autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="root"
+                placeholder="Enter username"
                 className="h-11 rounded-xl pl-9 text-sm"
                 required
               />
