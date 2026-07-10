@@ -2,15 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Menu, Moon, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, LogOut, Menu, Moon, Sun } from "lucide-react";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 
 type Theme = "dark" | "light";
 
 export function Topbar() {
+  const router = useRouter();
   const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen);
   const alertCount = useUnseenAlertMatchCount();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
   // Starts as "dark" to match the server-rendered `<html class="dark …">`
   // default (see app/layout.tsx) — reading the real, possibly-"light" DOM
   // class here during the initial render would make this component's first
@@ -65,6 +78,17 @@ export function Topbar() {
           title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         >
           {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
+        </button>
+
+        <button
+          type="button"
+          className="inline-flex rounded-md p-2 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          aria-label="Log out"
+          title="Log out"
+        >
+          <LogOut className="size-5" />
         </button>
       </div>
     </header>
