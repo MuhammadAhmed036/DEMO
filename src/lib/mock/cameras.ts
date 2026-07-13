@@ -27,6 +27,12 @@ const STREET_NAMES = [
   "Pedestrian Bridge",
 ];
 
+// Cameras this demo has real captured snapshots for get a fixed, meaningful
+// name instead of a random street name from the pool below.
+const CAMERA_NAME_OVERRIDES: Record<string, string> = {
+  "cam-fai-01": "Airport Entrance",
+};
+
 const ALL_AI_FEATURES: { id: string; label: string }[] = [
   { id: "person-counting", label: "Person Counting" },
   { id: "crowd-density", label: "Crowd Density" },
@@ -91,10 +97,15 @@ function buildCameras(): Camera[] {
         .slice(0, featureCount)
         .map((f) => ({ ...f, active: status === "online" }));
 
+      // Always draw a street name, even when overridden below, so the RNG
+      // sequence consumed here stays identical and every other camera's
+      // derived attributes don't shift.
+      const generatedName = `${rng.pick(STREET_NAMES)} ${idx > STREET_NAMES.length ? idx : ""}`.trim();
+
       cameras.push({
         id,
         code,
-        name: `${rng.pick(STREET_NAMES)} ${idx > STREET_NAMES.length ? idx : ""}`.trim(),
+        name: CAMERA_NAME_OVERRIDES[id] ?? generatedName,
         zoneId: zone.id,
         zoneName: zone.name,
         location: `${zone.name}, Islamabad City`,
