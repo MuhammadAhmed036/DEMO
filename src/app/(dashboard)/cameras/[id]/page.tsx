@@ -10,6 +10,7 @@ import { CameraRegistryDetails } from "@/components/cameras/CameraRegistryDetail
 import { CameraLiveStatsPanel } from "@/components/cameras/CameraLiveStatsPanel";
 import { CameraAlertRulesCard } from "@/components/cameras/CameraAlertRulesCard";
 import { CameraRetentionCard } from "@/components/cameras/CameraRetentionCard";
+import { CameraVehicleDetectionCard } from "@/components/cameras/CameraVehicleDetectionCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCamera } from "@/lib/hooks/useCameras";
@@ -17,6 +18,7 @@ import { useCameraLocation } from "@/lib/hooks/useCameraLocations";
 import { useCameraEvents } from "@/lib/hooks/useCameraDetail";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { resolveDetectionCameraId } from "@/lib/streamToDetectionCameraId";
+import { getCameraVehicleDetection } from "@/lib/mock/cameraVehicleDetections";
 
 export default function CameraDetailPage() {
   const params = useParams<{ id: string }>();
@@ -27,6 +29,7 @@ export default function CameraDetailPage() {
   const { data: events, isLoading: eventsLoading } = useCameraEvents(registryCameraId, 25);
   const setSelectedCameraId = useUIStore((s) => s.setSelectedCameraId);
   const setCreateAlertModalOpen = useUIStore((s) => s.setCreateAlertModalOpen);
+  const vehicleDetection = getCameraVehicleDetection(camera?.id ?? cameraId);
 
   const [playing, setPlaying] = useState(true);
 
@@ -130,6 +133,8 @@ export default function CameraDetailPage() {
               </div>
             </div>
           </CameraThumbnail>
+
+          {vehicleDetection && <CameraVehicleDetectionCard detection={vehicleDetection} />}
 
           <CameraLiveStatsPanel cameraId={registryCameraId} />
 
