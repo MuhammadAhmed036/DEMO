@@ -94,13 +94,18 @@ interface AlertMatchEventRow {
 // Demo alert rules live in memory only — a page refresh (or server restart
 // on Vercel) resets create/update/delete/mark-seen actions back to this
 // deterministic seed set, which is expected for a backend-free demo.
+// cam-fai-01 ("Airport Entrance") is dedicated to the vehicle-detection
+// scenario on its camera detail page — excluded here so these unrelated
+// person-detection alerts never land on it and confuse the two.
+const PERSON_ALERT_CAMERA_POOL = CAMERAS.filter((c) => c.id !== "cam-fai-01");
+
 function buildRules(): AlertRuleRow[] {
   const rng = createRng(55219);
   const rules: AlertRuleRow[] = [];
   const statusPool = ["active", "active", "resolved", "muted"];
 
   for (let i = 0; i < 4; i++) {
-    const camera = rng.pick(CAMERAS);
+    const camera = rng.pick(PERSON_ALERT_CAMERA_POOL);
     const bboxItem = ALERT_BBOX_DEMO_ITEMS[i % ALERT_BBOX_DEMO_ITEMS.length];
     const copy = PERSON_ALERT_COPY[bboxItem.key];
     const status = rng.pick(statusPool);
@@ -151,6 +156,48 @@ function buildRules(): AlertRuleRow[] {
       created_at: createdAt,
       updated_at: createdAt,
       event_count: rng.int(1, 40),
+    });
+  }
+
+  // A dedicated 5th rule for cam-fai-01 ("Airport Entrance") — its detail
+  // panel shows the camera's live feed plus the captured vehicle snapshot,
+  // rather than a static bounding-box frame like the person alerts above.
+  const airportEntranceCamera = CAMERAS.find((c) => c.id === "cam-fai-01");
+  if (airportEntranceCamera) {
+    const createdAt = new Date(REFERENCE_NOW.getTime() - 14 * 60_000).toISOString();
+    rules.push({
+      id: 5,
+      alert_id: "alrt_0005",
+      camera_id: airportEntranceCamera.id,
+      zone: airportEntranceCamera.zoneName,
+      collection_id: null,
+      collection_name: null,
+      label: "vehicle",
+      name: "Airport Entrance Area",
+      description: "Vehicle detected and tracked at the airport entrance gate.",
+      source_event_id: null,
+      bounding_box: { x1: 63, y1: 178, x2: 995, y2: 812 },
+      demo_image_key: "airport_entrance_area",
+      conditions: {
+        condition: "boundary",
+        trigger_inside: true,
+        trigger_outside: false,
+        person_label: "vehicle",
+      },
+      metadata: { category: "critical", ref_image_width: 1911, ref_image_height: 852 },
+      person_count_inside: 0,
+      person_count_outside: 0,
+      seen_count: 6,
+      unseen_count: 1,
+      seen: false,
+      seen_by: [],
+      seen_at: null,
+      status: "active",
+      latest_event_id: null,
+      created_by: "demo",
+      created_at: createdAt,
+      updated_at: createdAt,
+      event_count: 6,
     });
   }
 

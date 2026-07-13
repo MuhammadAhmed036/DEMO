@@ -69,7 +69,20 @@ export function AlertRuleDetailPanel({
 
             <div className="space-y-4 p-4">
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-surface-border bg-black">
-                {boundingBoxDemo ? (
+                {boundingBoxDemo?.useLiveFeed ? (
+                  <>
+                    <span className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-xs font-medium text-white">
+                      <span className="size-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
+                    </span>
+                    <CameraFrame
+                      cameraId={rule.cameraId}
+                      eventId={rule.latestEventId}
+                      alt="Live camera feed"
+                      className="h-full w-full object-contain"
+                      emptyLabel="Feed unavailable"
+                    />
+                  </>
+                ) : boundingBoxDemo ? (
                   <Image
                     src={boundingBoxDemo.boundingBoxImage}
                     alt={`${boundingBoxDemo.title} — detected bounding box`}

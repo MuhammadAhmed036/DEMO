@@ -9,6 +9,8 @@ export interface AlertBoundingBoxDemoItem {
   title: string;
   boundingBoxImage: string;
   eventImages: string[];
+  /** Show the camera's live feed as the primary frame instead of `boundingBoxImage`. */
+  useLiveFeed?: boolean;
 }
 
 export const ALERT_BBOX_DEMO_ITEMS: AlertBoundingBoxDemoItem[] = [
@@ -35,6 +37,13 @@ export const ALERT_BBOX_DEMO_ITEMS: AlertBoundingBoxDemoItem[] = [
     title: "Kitchen",
     boundingBoxImage: "/alerts/bounding_box/kitchen.jpg",
     eventImages: ["/alerts/events/kitchen.jpg", "/alerts/events/kitchen2.jpg"],
+  },
+  {
+    key: "airport_entrance_area",
+    title: "Airport Entrance Area",
+    boundingBoxImage: "/alerts/vehicles/airport-entrance.jpg",
+    eventImages: ["/alerts/vehicles/airport-entrance.jpg"],
+    useLiveFeed: true,
   },
 ];
 
