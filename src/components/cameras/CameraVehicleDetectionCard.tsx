@@ -14,7 +14,7 @@ export function CameraVehicleDetectionCard({ detection }: { detection: CameraVeh
       <div className="relative aspect-video w-full overflow-hidden bg-black">
         <Image
           src={detection.image}
-          alt={`${detection.vehicleColor} ${detection.vehicleType} — ${detection.plateNumber}`}
+          alt={`${detection.vehicleColor} ${detection.vehicleType} — ${detection.plateNumber ?? "unrecognized plate"}`}
           fill
           sizes="(min-width: 1024px) 640px, 100vw"
           className="object-cover"
@@ -32,7 +32,7 @@ export function CameraVehicleDetectionCard({ detection }: { detection: CameraVeh
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Plate Number</span>
-          <span className="font-mono font-medium">{detection.plateNumber}</span>
+          <span className="font-mono font-medium">{detection.plateNumber ?? "Unrecognized"}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Confidence</span>

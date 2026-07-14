@@ -94,10 +94,12 @@ interface AlertMatchEventRow {
 // Demo alert rules live in memory only — a page refresh (or server restart
 // on Vercel) resets create/update/delete/mark-seen actions back to this
 // deterministic seed set, which is expected for a backend-free demo.
-// cam-fai-01 ("Airport Entrance") is dedicated to the vehicle-detection
-// scenario on its camera detail page — excluded here so these unrelated
-// person-detection alerts never land on it and confuse the two.
-const PERSON_ALERT_CAMERA_POOL = CAMERAS.filter((c) => c.id !== "cam-fai-01");
+// cam-fai-01 ("Airport Entrance") and cam-fai-02 ("Airport Runway Area") are
+// dedicated to the vehicle-detection scenarios on their camera detail pages
+// — excluded here so these unrelated person-detection alerts never land on
+// either one and confuse the two.
+const VEHICLE_DEMO_CAMERA_IDS = new Set(["cam-fai-01", "cam-fai-02"]);
+const PERSON_ALERT_CAMERA_POOL = CAMERAS.filter((c) => !VEHICLE_DEMO_CAMERA_IDS.has(c.id));
 
 function buildRules(): AlertRuleRow[] {
   const rng = createRng(55219);
@@ -198,6 +200,47 @@ function buildRules(): AlertRuleRow[] {
       created_at: createdAt,
       updated_at: createdAt,
       event_count: 6,
+    });
+  }
+
+  // A 6th rule for the airport runway feed (cam-fai-02) — a second live-feed
+  // camera in the same area, not part of the regular CAMERAS fleet, so its
+  // id/zone are set directly instead of looked up.
+  {
+    const createdAt = new Date(REFERENCE_NOW.getTime() - 41 * 60_000).toISOString();
+    rules.push({
+      id: 6,
+      alert_id: "alrt_0006",
+      camera_id: "cam-fai-02",
+      zone: "Faizabad / I-8",
+      collection_id: null,
+      collection_name: null,
+      label: "vehicle",
+      name: "Airport Runway Area",
+      description: "Ground-service vehicle detected and tracked near the runway apron.",
+      source_event_id: null,
+      bounding_box: { x1: 342, y1: 402, x2: 531, y2: 505 },
+      demo_image_key: "airport_runway_area",
+      conditions: {
+        condition: "boundary",
+        trigger_inside: true,
+        trigger_outside: false,
+        person_label: "vehicle",
+      },
+      metadata: { category: "medium", ref_image_width: 1577, ref_image_height: 872 },
+      person_count_inside: 0,
+      person_count_outside: 0,
+      seen_count: 3,
+      unseen_count: 1,
+      seen: false,
+      seen_by: [],
+      seen_at: null,
+      status: "active",
+      latest_event_id: null,
+      created_by: "demo",
+      created_at: createdAt,
+      updated_at: createdAt,
+      event_count: 3,
     });
   }
 

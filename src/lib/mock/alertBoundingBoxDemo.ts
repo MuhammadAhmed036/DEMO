@@ -45,6 +45,13 @@ export const ALERT_BBOX_DEMO_ITEMS: AlertBoundingBoxDemoItem[] = [
     eventImages: ["/alerts/vehicles/airport-entrance.jpg"],
     useLiveFeed: true,
   },
+  {
+    key: "airport_runway_area",
+    title: "Airport Runway Area",
+    boundingBoxImage: "/alerts/vehicles/airport-tarmac.jpg",
+    eventImages: ["/alerts/vehicles/airport-tarmac.jpg"],
+    useLiveFeed: true,
+  },
 ];
 
 export function getAlertBoundingBoxDemoByKey(key: string | null | undefined) {

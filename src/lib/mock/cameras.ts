@@ -31,6 +31,7 @@ const STREET_NAMES = [
 // name instead of a random street name from the pool below.
 const CAMERA_NAME_OVERRIDES: Record<string, string> = {
   "cam-fai-01": "Airport Entrance",
+  "cam-fai-02": "Airport Runway Area",
 };
 
 const ALL_AI_FEATURES: { id: string; label: string }[] = [

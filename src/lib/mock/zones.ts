@@ -47,7 +47,7 @@ export const ZONES: Zone[] = [
     shortName: "Faizabad / I-8",
     color: "#f59e0b",
     center: [73.055, 33.655],
-    cameraCount: 1,
+    cameraCount: 2,
   },
   {
     id: "zone-rawalpindi-border",

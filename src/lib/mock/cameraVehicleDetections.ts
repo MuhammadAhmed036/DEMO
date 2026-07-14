@@ -4,7 +4,7 @@ export interface CameraVehicleDetection {
   image: string;
   vehicleType: string;
   vehicleColor: string;
-  plateNumber: string;
+  plateNumber: string | null;
   confidence: number;
   detectedAt: string;
   description: string;
@@ -19,6 +19,15 @@ const CAMERA_VEHICLE_DETECTIONS: Record<string, CameraVehicleDetection> = {
     confidence: 96,
     detectedAt: new Date(REFERENCE_NOW.getTime() - 14 * 60_000).toISOString(),
     description: "Vehicle detected and tracked at the airport entrance gate.",
+  },
+  "cam-fai-02": {
+    image: "/alerts/vehicles/airport-tarmac.jpg",
+    vehicleType: "Service Truck",
+    vehicleColor: "White",
+    plateNumber: null,
+    confidence: 91,
+    detectedAt: new Date(REFERENCE_NOW.getTime() - 41 * 60_000).toISOString(),
+    description: "Ground-service vehicle detected and tracked near the runway apron.",
   },
 };
 

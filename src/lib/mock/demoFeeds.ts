@@ -16,6 +16,7 @@ const DEMO_EXTERNAL_PLAYERS: Record<string, string> = {
   "cam-i-01": "https://cinema8.com/video/PO8P5dMO?autoplay=1&muted=1&loop=1&controls=0",
   "cam-fai-01": "https://cinema8.com/video/zOwMpxvX?autoplay=1&muted=1&loop=1&controls=0",
   "cam-rwp-01": "https://cinema8.com/video/kDl1pbaX?autoplay=1&muted=1&loop=1&controls=0",
+  "cam-fai-02": "https://cinema8.com/video/PO8PY17O?autoplay=1&muted=1&loop=1&controls=0",
 };
 
 export function demoPlayerUrlFor(cameraId: string): string | undefined {
