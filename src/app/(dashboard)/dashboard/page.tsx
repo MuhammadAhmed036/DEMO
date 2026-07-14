@@ -18,6 +18,7 @@ import {
 import { useLiveCameraOccupancy } from "@/lib/hooks/useLiveCameraOccupancy";
 import { useAlertStats, useUnseenAlertMatchCount } from "@/lib/hooks/useAlertRules";
 import { useZones } from "@/lib/hooks/useZones";
+import { resolveDetectionCameraId } from "@/lib/streamToDetectionCameraId";
 import { ISLAMABAD_MAX_ZOOM } from "@/components/map/mapStyles";
 import { densityTierBadgeTone, densityTierColor, densityTierFromCount } from "@/lib/density";
 import { formatCompactNumber, formatNumber, formatTime } from "@/lib/formatters";
@@ -44,9 +45,19 @@ export default function DashboardPage() {
   );
   const activeCameraCount = cameras?.filter((camera) => camera.status === "online").length;
 
+  // Same fix as Map View: the registry can hold rows for cameras that no
+  // longer exist in the live-stream feed (sync/create only ever add rows,
+  // nothing here removes one when a camera is deleted) — only show a
+  // registry row if it still matches a camera Cameras/Media Wall show.
+  const liveCameraLocations = useMemo(() => {
+    if (!cameras) return cameraLocations ?? [];
+    const liveIds = new Set(cameras.map((c) => resolveDetectionCameraId(c.id).toLowerCase()));
+    return (cameraLocations ?? []).filter((c) => liveIds.has(c.cameraId.toLowerCase()));
+  }, [cameraLocations, cameras]);
+
   const selectedCameraLocation = useMemo(
-    () => cameraLocations?.find((c) => c.cameraId === selectedLocationCameraId) ?? null,
-    [cameraLocations, selectedLocationCameraId]
+    () => liveCameraLocations.find((c) => c.cameraId === selectedLocationCameraId) ?? null,
+    [liveCameraLocations, selectedLocationCameraId]
   );
 
   const peakZone = useMemo(() => {
@@ -82,7 +93,7 @@ export default function DashboardPage() {
   function handleSelectCamera(cameraId: string) {
     setSelectedLocationCameraId(cameraId);
     setPanelMode("camera");
-    const camera = cameraLocations?.find((c) => c.cameraId === cameraId);
+    const camera = liveCameraLocations.find((c) => c.cameraId === cameraId);
     if (camera?.latitude !== null && camera?.longitude !== null && camera) {
       setFlyToTarget({
         center: [camera.longitude as number, camera.latitude as number],
@@ -164,7 +175,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="h-[420px] overflow-hidden rounded-xl border border-surface-border sm:h-[520px] lg:h-[600px]">
           <CameraLocationMapLoader
-            cameras={cameraLocations ?? []}
+            cameras={liveCameraLocations}
             selectedCameraId={selectedLocationCameraId}
             onSelectCamera={handleSelectCamera}
             onDragEnd={persistCameraLocation}

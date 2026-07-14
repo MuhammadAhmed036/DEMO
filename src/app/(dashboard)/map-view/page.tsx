@@ -68,6 +68,25 @@ export default function MapViewPage() {
     return set;
   }, [registryCameras]);
 
+  // The registry (`camera_locations`) can hold rows for cameras that were
+  // removed from the actual camera system later — sync/create only ever
+  // adds rows, nothing here ever deletes one when a camera goes away. Only
+  // show a registry row if that camera still exists in the live-stream
+  // feed (the same source Cameras/Media Wall use), so a deleted camera
+  // doesn't linger as a ghost pin here.
+  const liveStreamIds = useMemo(() => {
+    const set = new Set<string>();
+    (streamCameras ?? []).forEach((c) => set.add(resolveDetectionCameraId(c.id).toLowerCase()));
+    return set;
+  }, [streamCameras]);
+
+  const liveRegistryCameras = useMemo(() => {
+    // Streams haven't loaded yet — don't filter against an empty set, or
+    // every registry camera would briefly vanish on first paint.
+    if (!streamCameras) return registryCameras ?? [];
+    return (registryCameras ?? []).filter((c) => liveStreamIds.has(c.cameraId.toLowerCase()));
+  }, [registryCameras, streamCameras, liveStreamIds]);
+
   // Cameras known from the live-stream feed that don't have a registry row
   // yet (no detection data for `sync` to pick up from). Shown alongside
   // registered cameras so every camera is visible at once — placing one on
@@ -112,8 +131,8 @@ export default function MapViewPage() {
   }, [streamCameras, registeredIds]);
 
   const cameras = useMemo(
-    () => [...(registryCameras ?? []), ...unregisteredCameras],
-    [registryCameras, unregisteredCameras]
+    () => [...liveRegistryCameras, ...unregisteredCameras],
+    [liveRegistryCameras, unregisteredCameras]
   );
 
   const selectedCamera = useMemo(
